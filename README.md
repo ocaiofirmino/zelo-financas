@@ -10,6 +10,55 @@ O nome do sistema é **Zelo**, mas a pasta do projeto pode continuar como `folga
 
 A revisão da primeira versão, os testes executados e as limitações conhecidas estão em [Avaliação da v0.1.0](docs/AVALIACAO-v0.1.0.md).
 
+## Veja o Zelo em funcionamento
+
+Um motion de **40 segundos**, em formato horizontal, mostra o dashboard, o cadastro de um gasto, os lançamentos, o cartão, o demonstrativo e as opções de exportação. As imagens são **capturas reais do sistema**, com dados fictícios do modo Demonstração. O vídeo tem legendas explicativas e não possui áudio.
+
+![Motion do Zelo com capturas reais das telas](docs/media/zelo-motion-preview.gif)
+
+🎬 [Assistir ou baixar o vídeo em Full HD (.mp4)](https://github.com/ocaiofirmino/zelo-financas/raw/refs/heads/main/docs/media/zelo-motion.mp4) · [Ver o pôster](docs/media/zelo-motion-poster.png)
+
+<details>
+<summary>Ver as capturas reais e o que cada tela faz</summary>
+
+### Meu mês
+
+Resultado realizado e previsto, meta de sobra, categorias e próximos vencimentos.
+
+![Dashboard Meu mês do Zelo](docs/media/dashboard.png)
+
+### Novo lançamento
+
+Registro de receitas ou despesas com descrição, valor, data, categoria, pagamento e situação. No exemplo do motion, foi cadastrado um gasto fictício de R$ 158,90, apenas na demonstração.
+
+![Formulário real de novo lançamento](docs/media/novo-lancamento.png)
+
+### Lançamentos
+
+Busca, filtros e ações para conferir, editar ou excluir registros.
+
+![Lista de lançamentos do Zelo](docs/media/lancamentos.png)
+
+### Cartão e parcelas
+
+Compras cadastradas manualmente, parcelas do mês e compromissos futuros.
+
+![Tela de cartão e parcelas](docs/media/cartao.png)
+
+### Demonstrativo
+
+Receitas, despesas, resultado e comparação dos gastos com os limites por categoria.
+
+![Demonstrativo mensal do Zelo](docs/media/demonstrativo.png)
+
+### Exportação
+
+Seleção do período e do formato Excel, CSV ou CSV preparado para importar no Power BI.
+
+![Opções reais de exportação do Zelo](docs/media/exportacao.png)
+
+</details>
+
 ## Intuito do sistema
 
 O Zelo foi criado para facilitar o cuidado com o dinheiro no dia a dia. Ao registrar o que você recebe e gasta, fica mais fácil entender seus hábitos, lembrar das contas que ainda vão vencer e planejar quanto pretende deixar de sobra no mês.
