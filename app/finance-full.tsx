@@ -132,10 +132,10 @@ async function api(method: string, data?: unknown) {
     );
   return result;
 }
-export default function FinanceApp() {
+export default function FinanceApp({ demoOnly = false }: { demoOnly?: boolean }) {
   const [view, setView] = useState<View>("overview"),
     [month, setMonth] = useState(localMonth()),
-    [demo, setDemo] = useState(true),
+    [demoMode, setDemo] = useState(true),
     [exampleRows, setExampleRows] = useState<Transaction[]>(demoData),
     [exampleSettings, setExampleSettings] = useState<Record<string, Settings>>(
       {},
@@ -173,6 +173,7 @@ export default function FinanceApp() {
       dialogReturnFocus.current.focus();
     else document.querySelector<HTMLButtonElement>(".floating-button")?.focus();
   }
+  const demo = demoOnly || demoMode;
   const allRows = demo ? exampleRows : savedRows,
     rows = allRows.filter((r) => r.date.slice(0, 7) === month),
     summary = totals(rows),
@@ -187,6 +188,7 @@ export default function FinanceApp() {
       ? Math.min(100, Math.max(0, (summary.result / settings.goal) * 100))
       : 0;
   const load = useCallback(async () => {
+    if (demoOnly) return;
     setLoadError("");
     setLoaded(false);
     try {
@@ -201,12 +203,13 @@ export default function FinanceApp() {
           : "Seus dados estão indisponíveis.",
       );
     }
-  }, []);
+  }, [demoOnly]);
   useEffect(() => {
+    if (demoOnly) return;
     const pref = localStorage.getItem("folga-data-mode");
     if (pref) setDemo(pref === "demo");
     void load();
-  }, [load]);
+  }, [load, demoOnly]);
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(""), 5000);
@@ -236,6 +239,7 @@ export default function FinanceApp() {
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [busy, entryOpen, exportOpen, planOpen, deleteEntry, demo, loaded, month]);
   function chooseMode(next: boolean) {
+    if (demoOnly) return;
     setDemo(next);
     localStorage.setItem("folga-data-mode", next ? "demo" : "real");
     setNotice(
@@ -243,6 +247,26 @@ export default function FinanceApp() {
         ? "Modo demonstração. Alterações de teste são temporárias."
         : "Seu controle pessoal. Os dados serão salvos na sua conta.",
     );
+  }
+  function restartDemo() {
+    if (busy) return;
+    setExampleRows(demoData());
+    setExampleSettings({});
+    setMonth(localMonth());
+    setView("overview");
+    setQuery("");
+    setTypeFilter("all");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+    setEntryOpen(false);
+    setExportOpen(false);
+    setPlanOpen(false);
+    setDeleteEntry(null);
+    setEditing(null);
+    setLeavingId(null);
+    setFormError("");
+    setLoadError("");
+    setNotice("Demonstração reiniciada com os valores de exemplo.");
   }
   function setData(next: Transaction[]) {
     if (demo) setExampleRows(next);
@@ -607,9 +631,19 @@ export default function FinanceApp() {
               <span className="mode-pill">
                 {demo ? "Demonstração" : loaded ? "Meu controle" : "Carregando"}
               </span>
-              <button className="text-button" onClick={() => chooseMode(!demo)}>
-                {demo ? "Usar meus dados" : "Ver demonstração"}
-              </button>
+              {demoOnly ? (
+                <button
+                  className="text-button"
+                  onClick={restartDemo}
+                  disabled={busy}
+                >
+                  Reiniciar demonstração
+                </button>
+              ) : (
+                <button className="text-button" onClick={() => chooseMode(!demo)}>
+                  {demo ? "Usar meus dados" : "Ver demonstração"}
+                </button>
+              )}
             </div>
             <div className="toolbar-actions">
               <ExportStatement
@@ -630,7 +664,25 @@ export default function FinanceApp() {
               </button>
             </div>
           </div>
-          {loadError && (
+          {demoOnly && (
+            <aside className="demo-callout" aria-label="Demonstração interativa">
+              <div>
+                <strong>Experimente o Zelo.</strong>
+                <p>
+                  Explore as telas, registre um gasto e baixe um extrato. Os
+                  valores são fictícios; recarregar restaura os exemplos.
+                </p>
+              </div>
+              <a
+                href="https://github.com/ocaiofirmino/zelo-financas"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ver o código
+              </a>
+            </aside>
+          )}
+          {!demoOnly && loadError && (
             <div className="error-banner" role="alert">
               <span>{loadError}</span>
               <button className="text-button" onClick={() => void load()}>

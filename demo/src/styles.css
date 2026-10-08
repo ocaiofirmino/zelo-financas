@@ -1,0 +1,8 @@
+@import "../../app/finance.css";
+
+/* Inclui somente as classes usadas na interface compartilhada da demonstração. */
+@source "../../app/finance-full.tsx";
+@source "../../app/export-statement.tsx";
+@source "../../components/ui/dialog.tsx";
+@source "../../components/ui/popover.tsx";
+@source "../../components/ui/button.tsx";

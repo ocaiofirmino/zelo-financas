@@ -1,12 +1,43 @@
 # Zelo — finanças pessoais
 
+> **Branch `demo/vercel`: demonstração pública para portfólio.** A aplicação em `demo/` usa valores fictícios e mantém as alterações apenas na memória da aba. Recarregar a página ou clicar em **Reiniciar demonstração** restaura os exemplos. A `main` continua com a versão original do sistema.
+>
+> **Deploy na Vercel:** siga o [guia da demonstração](docs/DEMO-VERCEL.md). Use **Root Directory `demo`** e habilite o acesso aos arquivos compartilhados fora dessa pasta.
+
 O Zelo ajuda a organizar receitas e despesas, entender para onde o dinheiro está indo e encontrar espaço no orçamento para economizar. O sistema está em português, com visual escuro, paleta verde e telas adaptadas para computador e celular.
 
 O nome do sistema é **Zelo**, mas a pasta do projeto pode continuar como `folga-financas`.
 
+## Experimente a demonstração
+
+Esta branch permite apresentar o Zelo sem criar conta, configurar banco ou acessar registros pessoais. O selo **Demonstração** permanece ativo e a opção **Usar meus dados** não aparece nessa aplicação.
+
+1. Explore **Meu mês**, **Lançamentos**, **Cartão** e **Demonstrativo**. No celular, use o menu hambúrguer.
+2. Use **Novo lançamento** para testar receitas, despesas e compras parceladas. Edite, exclua ou marque os registros como realizados e previstos.
+3. Ajuste **Meta e limites** e veja os totais responderem às alterações.
+4. Em **Baixar extrato**, escolha o mês ou o histórico e baixe **XLSX**, **CSV** ou **CSV para importar no Power BI**. Os arquivos recebem `demonstracao` no nome; não é gerado um projeto `.pbix`.
+5. Clique em **Reiniciar demonstração** para voltar aos exemplos e ao mês inicial. Recarregar ou fechar a aba também descarta as alterações de teste.
+
+| Comportamento | Demonstração em `demo/` | Sistema original na raiz |
+| --- | --- | --- |
+| Dados | Exemplos fictícios e testes da aba | Registros do usuário no modo pessoal |
+| Persistência | Apenas memória; recarregar restaura exemplos | API e banco SQLite / Cloudflare D1 |
+| Conta e login | Não exige conta nem implementa login | Login próprio ainda não integrado |
+| Hospedagem | Arquivos estáticos com React e Vite | Vinext e Cloudflare Workers |
+
+Para executar a demonstração localmente, com **Node.js 22.13 ou superior**:
+
+```powershell
+cd demo
+npm.cmd ci
+npm.cmd run dev
+```
+
+Abra o endereço informado pelo terminal. Em Linux e macOS, use `npm` no lugar de `npm.cmd`. A pasta `demo` usa componentes e recursos da raiz; mantenha o repositório completo. Instruções de build e publicação estão no [guia da Vercel](docs/DEMO-VERCEL.md).
+
 ## Versão inicial
 
-**v0.1.0 — MVP de controle financeiro pessoal.** Esta primeira versão reúne dashboard, lançamentos, parcelas, metas, demonstrativo e exportação de extratos. O uso local já possui armazenamento persistente; cadastro, login próprio e acesso público para outros usuários estão nas próximas etapas.
+**v0.1.0 — MVP de controle financeiro pessoal.** Esta primeira versão reúne dashboard, lançamentos, parcelas, metas, demonstrativo e exportação de extratos. No sistema original, o uso local possui armazenamento persistente; a aplicação `demo/` desta branch é temporária. Cadastro, login próprio e acesso público para outros usuários estão nas próximas etapas.
 
 A revisão da primeira versão, os testes executados e as limitações conhecidas estão em [Avaliação da v0.1.0](docs/AVALIACAO-v0.1.0.md).
 
@@ -78,9 +109,9 @@ O sistema ajuda a responder três perguntas: **quanto entrou, para onde foi e qu
 
 Também é possível definir uma **meta de sobra mensal**, configurar **limites por categoria** e **baixar extratos em XLSX ou CSV**, incluindo uma versão preparada para o Power BI.
 
-## Tutorial simples: seu primeiro mês no Zelo
+## Tutorial simples: seu primeiro mês no controle pessoal
 
-Com o sistema aberto no navegador, siga estes passos:
+Os passos abaixo descrevem o sistema original executado pela raiz do repositório, com banco local. Para a aplicação temporária de portfólio, siga [Experimente a demonstração](#experimente-a-demonstração).
 
 1. **Entre no seu controle.** Se aparecer o selo **Demonstração**, clique em **Usar meus dados**. O selo passa a indicar **Meu controle**. Para conhecer as telas antes de cadastrar seus gastos, use **Ver demonstração**; os exemplos são fictícios e ficam separados dos seus dados.
 2. **Escolha o mês.** Use a data no cabeçalho para selecionar o período que deseja organizar. No celular, as telas ficam no menu hambúrguer.
@@ -112,9 +143,9 @@ Se cadastrar uma compra no cartão de **R$ 900,00 em 3 parcelas**, informe o **v
 
 Registre os gastos conforme acontecerem e reserve alguns minutos por semana para conferir contas previstas e categorias. Ao fechar o mês, consulte o Demonstrativo, veja quais gastos podem ser ajustados e defina sua meta para o próximo mês. Quanto mais completos estiverem os registros, mais útil será a previsão.
 
-## Executar no Windows e no VS Code
+## Executar o sistema original no Windows e no VS Code
 
-Requer **Node.js 22.13.0 ou superior**, com npm instalado. Abra a pasta do projeto no VS Code e use o terminal nessa pasta.
+Requer **Node.js 22.13.0 ou superior**, com npm instalado. Abra a pasta do projeto no VS Code e use o terminal nessa pasta. Os comandos desta seção executam a versão com banco, pela raiz; para a demonstração da Vercel, execute os comandos dentro de `demo/` indicados no [guia](docs/DEMO-VERCEL.md).
 
 Os exemplos usam `npm.cmd` para evitar o bloqueio de `npm.ps1` no PowerShell. Em outros sistemas, use `npm`.
 
@@ -197,9 +228,11 @@ Os valores financeiros são armazenados em **centavos inteiros**.
 
 O resultado representa o fluxo do mês e não inclui um saldo bancário inicial. A meta não registra uma transferência para uma reserva. Os valores do cartão são informados manualmente; não existe conexão automática com bancos ou operadoras.
 
-## Dados salvos e login
+## Dados salvos e login no sistema original
 
-Os registros e as configurações de metas e limites são gravados pela API em **SQLite / Cloudflare D1**. No desenvolvimento local, o banco fica em **`.wrangler/state`**, dentro da pasta do projeto.
+Na aplicação **`demo/`**, os registros e as configurações ficam apenas na memória da aba. Ela não usa API, banco, login ou `localStorage` para guardar os testes. Recarregar a página restaura os exemplos; os extratos baixados permanecem nos arquivos do dispositivo.
+
+No sistema original, os registros e as configurações de metas e limites são gravados pela API em **SQLite / Cloudflare D1**. No desenvolvimento local, o banco fica em **`.wrangler/state`**, dentro da pasta do projeto.
 
 **Fechar o navegador, o VS Code ou o servidor local não apaga os dados gravados.** Preserve essa pasta ao fazer backup ou transferir o ambiente para outro local. Um ZIP contendo apenas o código não é um backup dos registros financeiros.
 
@@ -212,6 +245,8 @@ A identidade da API atual vem dos cabeçalhos de autenticação do ambiente Site
 A interface separada **zelo-login**, feita em HTML, CSS e JavaScript, é um protótipo visual com troca animada entre login e cadastro. Ela não cria contas nem autentica usuários no dashboard.
 
 ## 🛠️ Tecnologias
+
+**A demonstração da Vercel usa React, TypeScript, Vite, CSS/Tailwind, Lucide e ExcelJS.** Ela compartilha a interface do projeto, mas o build estático não inclui o backend ou o banco descritos abaixo. As demais tecnologias desta seção pertencem ao sistema original.
 
 <p align="center">
   <a href="https://skillicons.dev">
