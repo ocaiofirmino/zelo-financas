@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {installmentDate,makeTransactions,parseAmount,totals,validateTransaction} from '../lib/finance.ts';
+const draft={description:'Compra de teste',amount:1001,date:'2024-01-31',type:'expense',category:'Compras',payment:'card',status:'paid',installments:3};
+const parts=makeTransactions(validateTransaction(draft));
+assert.deepEqual(parts.map(r=>r.amount),[334,334,333]);
+assert.deepEqual(parts.map(r=>r.date),['2024-01-31','2024-02-29','2024-03-31']);
+assert.deepEqual(parts.map(r=>r.status),['paid','pending','pending']);
+assert.equal(installmentDate('2025-01-31',1),'2025-02-28');
+assert.equal(installmentDate('2026-12-31',1),'2027-01-31');
+assert.equal(parts.reduce((v,r)=>v+r.amount,0),draft.amount);
+for(const date of ['2025-02-29','2024-02-30','2101-01-01'])assert.throws(()=>validateTransaction({...draft,date}));
+assert.throws(()=>validateTransaction({...draft,date:'2100-12-31'}));
+assert.throws(()=>validateTransaction({...draft,amount:2}));
+assert.equal(parseAmount('1,05'),105);assert.equal(parseAmount('1.05'),105);
+for(const amount of ['-1','1,001','abc'])assert.ok(Number.isNaN(parseAmount(amount)));
+const base=parts[0];const sample=[{...base,type:'income',status:'paid',amount:100000},{...base,type:'expense',status:'paid',amount:25000},{...base,type:'income',status:'pending',amount:10000},{...base,type:'expense',status:'pending',amount:20000}];
+assert.deepEqual(totals(sample),{income:100000,expense:25000,pendingIncome:10000,pendingExpense:20000,result:75000,projected:65000});
+console.log('OK: centavos, parcelas, datas, validação e resultados.');
