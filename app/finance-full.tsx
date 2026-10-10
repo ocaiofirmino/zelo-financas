@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import ExportStatement from "./export-statement";
+import SiteFooter from "./site-footer";
 import {
   useCallback,
   useEffect,
@@ -1330,13 +1331,7 @@ export default function FinanceApp({ demoOnly = false }: { demoOnly?: boolean })
               </p>
             </>
           )}
-          <footer>
-            Zelo ·{" "}
-            {demo
-              ? "Demonstração com valores fictícios"
-              : "Seus dados são pessoais"}{" "}
-            · {monthTitle(month)}
-          </footer>
+          <SiteFooter demo={demo} monthLabel={monthTitle(month)} />
         </div>
       </main>
       <div className="floating-entry">
