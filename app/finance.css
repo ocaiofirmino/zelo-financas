@@ -1898,12 +1898,137 @@ main {
   animation: notice-enter 200ms ease both;
 }
 
-footer {
-  margin-top: 25px;
-  color: #6f9b8b;
-  font-size: 0.875rem;
-  text-align: center;
+/* Rodapé Assinatura: identidade, autoria e retorno à navegação. */
+.site-footer {
+  margin-top: 40px;
+  padding: 32px 34px 22px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: var(--card);
+  color: var(--foreground);
   line-height: 1.6;
+}
+
+.site-footer-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
+  padding-bottom: 28px;
+}
+
+.site-footer-brand {
+  font-size: 1.65rem;
+  font-weight: 600;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.site-footer-brand > span,
+.site-footer-message h2 > span {
+  color: var(--primary);
+}
+
+.site-footer-message h2 {
+  margin-top: 18px;
+  color: var(--foreground);
+  font-size: clamp(1.75rem, 2.4vw, 2.3rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.2;
+}
+
+.site-footer-author {
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.site-footer-author > p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+
+.site-footer-author > strong {
+  display: block;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.site-footer-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 14px;
+}
+
+.site-footer-project,
+.site-footer-top {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.site-footer-project {
+  color: var(--foreground);
+}
+
+.site-footer-project:hover {
+  color: var(--primary);
+}
+
+.site-footer-top {
+  padding: 10px 14px;
+  border: 1px solid var(--input);
+  border-radius: 12px;
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.site-footer-top:hover {
+  border-color: var(--primary);
+  background: var(--accent);
+  color: var(--primary);
+}
+
+.site-footer-project svg,
+.site-footer-top svg {
+  flex-shrink: 0;
+}
+
+.site-footer-bottom {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 700px) {
+  .site-footer {
+    padding: 26px 22px 20px;
+    border-radius: 22px;
+  }
+
+  .site-footer-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+    padding-bottom: 24px;
+  }
+
+  .site-footer-bottom {
+    flex-direction: column;
+    gap: 7px;
+  }
 }
 
 /* Gráficos e componentes auxiliares. */
