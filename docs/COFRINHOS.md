@@ -17,7 +17,7 @@ A antiga **Meta de sobra** foi retirada da interface desta branch. Ter um result
 5. Informe seus dias de recebimento, como **5 e 15**. Use a divisão igual ou personalize as proporções.
 6. Se já tiver uma quantia reservada, informe-a no cadastro. Ela entra como saldo inicial na data de criação: conta para o objetivo total, sem preencher o planejamento mensal de novos aportes.
 7. Quando guardar dinheiro, clique em **Guardar**, informe o valor e a data e salve. Use uma data de hoje ou do passado; um aporte futuro é apenas uma sugestão, não dinheiro já guardado.
-8. Consulte o saldo, a porcentagem e o histórico. Você também pode registrar retiradas, corrigir um registro por exclusão e novo cadastro, editar o planejamento ou arquivar a meta.
+8. Clique em **Detalhes** para abrir um popup com saldo, progresso e histórico, sem sair do ponto em que você está na página. O histórico tem rolagem própria. Você também pode registrar retiradas, corrigir um registro por exclusão e novo cadastro, editar o planejamento ou arquivar a meta.
 
 Um cofrinho com histórico é arquivado para preservar os registros. A exclusão de uma meta vazia serve para corrigir um cadastro feito por engano. Uma retirada maior que o saldo é recusada; apagar um aporte também é recusado quando isso deixaria o saldo negativo.
 

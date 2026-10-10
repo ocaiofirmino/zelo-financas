@@ -3304,13 +3304,74 @@ footer {
   color: var(--mint);
 }
 
-.savings-detail {
-  margin-top: 24px;
-  padding: 24px;
+[data-slot="dialog-content"].savings-detail {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 32px);
+  max-width: 760px;
+  max-height: min(820px, calc(100dvh - 48px));
+  padding: 28px;
+  gap: 0;
+  overflow: hidden;
+}
+
+.savings-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.savings-detail-header > div {
+  min-width: 0;
+}
+
+.savings-detail-header [data-slot="dialog-title"] {
+  padding-right: 0;
+  overflow-wrap: anywhere;
+}
+
+.savings-detail-header [data-slot="dialog-description"] {
+  margin-top: 10px;
+}
+
+.savings-detail-header > button {
+  flex-shrink: 0;
+}
+
+.savings-detail-summary {
+  flex-shrink: 0;
+  margin-top: 22px;
+}
+
+.savings-detail-summary > .savings-card-value {
+  margin: 0 0 14px;
+}
+
+.savings-detail-summary .savings-progress-caption {
+  margin-bottom: 10px;
+}
+
+.savings-detail .savings-history {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #24554c transparent;
+  scrollbar-width: thin;
+  padding-right: 6px;
+}
+
+.savings-detail .savings-notice {
+  flex-shrink: 0;
+  margin-top: 16px;
+  padding: 12px 14px;
   border: 1px solid var(--input);
-  border-radius: 24px;
-  background: var(--card);
-  animation: panel-enter 250ms ease both;
+  border-radius: 12px;
+  background: var(--muted);
+  color: var(--pistachio);
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
 .savings-detail .eyebrow {
@@ -3321,6 +3382,7 @@ footer {
 }
 
 .savings-detail-actions {
+  flex-shrink: 0;
   flex-wrap: wrap;
   justify-content: flex-start;
   padding: 20px 0;
@@ -3582,9 +3644,13 @@ footer {
   .savings-overview {
     padding: 22px;
   }
-  .savings-detail,
+  [data-slot="dialog-content"].savings-detail,
   .savings-schedule {
     padding: 20px;
+  }
+  [data-slot="dialog-content"].savings-detail {
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 24px);
   }
 }
 

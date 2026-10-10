@@ -422,6 +422,7 @@ export function SavingsPage({
     label: string;
   } | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const detailsReturnFocus = useRef<HTMLElement | null>(null);
   const ready = loaded && !error && !busy;
   const today = localDate();
   const goals = data.goals.filter(
@@ -485,6 +486,29 @@ export function SavingsPage({
   function restoreFocus(event: Event) {
     event.preventDefault();
     if (returnFocus.current?.isConnected) returnFocus.current.focus();
+    else if (
+      document.querySelector<HTMLButtonElement>(
+        '.savings-detail [aria-label="Fechar detalhes"]',
+      )
+    )
+      document
+        .querySelector<HTMLButtonElement>(
+          '.savings-detail [aria-label="Fechar detalhes"]',
+        )
+        ?.focus();
+    else document.querySelector<HTMLButtonElement>(".savings-new")?.focus();
+  }
+  function openDetails(id: string) {
+    detailsReturnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    setSelected(id);
+  }
+  function restoreDetailsFocus(event: Event) {
+    event.preventDefault();
+    if (detailsReturnFocus.current?.isConnected)
+      detailsReturnFocus.current.focus();
     else document.querySelector<HTMLButtonElement>(".savings-new")?.focus();
   }
   function openGoal(goal: SavingsGoal | null = null) {
@@ -630,6 +654,7 @@ export function SavingsPage({
         id: deleting.id,
       });
       setDeleting(null);
+      if (deleting.action === "goal") setSelected(null);
       setNotice("Registro excluído.");
     } catch (caught) {
       setFormError(errorMessage(caught));
@@ -791,10 +816,8 @@ export function SavingsPage({
                         </div>
                         <button
                           className="savings-card-title"
-                          onClick={() =>
-                            setSelected(selected === goal.id ? null : goal.id)
-                          }
-                          aria-expanded={selected === goal.id}
+                          onClick={() => openDetails(goal.id)}
+                          aria-haspopup="dialog"
                         >
                           <h3>{goal.name}</h3>
                           <ChevronRight size={18} />
@@ -839,9 +862,8 @@ export function SavingsPage({
                           )}
                           <button
                             className="secondary-button"
-                            onClick={() =>
-                              setSelected(selected === goal.id ? null : goal.id)
-                            }
+                            onClick={() => openDetails(goal.id)}
+                            aria-haspopup="dialog"
                           >
                             <History size={16} /> Detalhes
                           </button>
@@ -850,145 +872,6 @@ export function SavingsPage({
                     );
                   })}
                 </div>
-              )}
-              {detail && (
-                <section
-                  className="savings-detail"
-                  aria-labelledby="savings-detail-heading"
-                >
-                  <div className="section-head">
-                    <div>
-                      <span className="eyebrow">HISTÓRICO DO COFRINHO</span>
-                      <h2 id="savings-detail-heading">{detail.name}</h2>
-                    </div>
-                    <button
-                      className="savings-icon-button"
-                      aria-label="Fechar detalhes"
-                      onClick={() => setSelected(null)}
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                  <div className="savings-detail-actions">
-                    <button
-                      className="secondary-button"
-                      disabled={!ready || detail.archived}
-                      onClick={() => openGoal(detail)}
-                    >
-                      <Pencil size={15} /> Editar meta
-                    </button>
-                    <button
-                      className="secondary-button"
-                      disabled={
-                        !ready ||
-                        detail.archived ||
-                        goalBalance(detail, data.entries) === 0
-                      }
-                      onClick={() => openEntry(detail, "withdrawal")}
-                    >
-                      <ArrowUpRight size={16} /> Registrar retirada
-                    </button>
-                    <button
-                      className="text-button"
-                      disabled={!ready}
-                      onClick={() => void archive(detail)}
-                    >
-                      {detail.archived ? (
-                        <RotateCcw size={16} />
-                      ) : (
-                        <Archive size={16} />
-                      )}
-                      {detail.archived ? "Restaurar" : "Arquivar"}
-                    </button>
-                    {!data.entries.some(
-                      (entry) => entry.goalId === detail.id,
-                    ) && (
-                      <button
-                        className="text-button negative"
-                        disabled={!ready}
-                        onClick={() =>
-                          requestDelete("goal", detail.id, detail.name)
-                        }
-                      >
-                        <Trash2 size={15} /> Excluir vazio
-                      </button>
-                    )}
-                  </div>
-                  <div className="savings-history">
-                    {data.entries
-                      .filter((entry) => entry.goalId === detail.id)
-                      .sort((a, b) => b.date.localeCompare(a.date))
-                      .map((entry) => (
-                        <div className="savings-history-row" key={entry.id}>
-                          <span
-                            className={"savings-movement-icon " + entry.kind}
-                          >
-                            {entry.kind !== "withdrawal" ? (
-                              <ArrowDownLeft size={17} />
-                            ) : (
-                              <ArrowUpRight size={17} />
-                            )}
-                          </span>
-                          <div>
-                            <strong>
-                              {entry.kind === "initial"
-                                ? "Saldo inicial"
-                                : entry.kind === "deposit"
-                                  ? "Valor guardado"
-                                  : "Retirada"}
-                            </strong>
-                            <small>
-                              {dateLabel(entry.date)}
-                              {entry.note ? " · " + entry.note : ""}
-                            </small>
-                          </div>
-                          <strong
-                            className={
-                              entry.kind !== "withdrawal"
-                                ? "positive"
-                                : "negative"
-                            }
-                          >
-                            {entry.kind !== "withdrawal" ? "+" : "−"}{" "}
-                            {money(entry.amount)}
-                          </strong>
-                          <button
-                            className="savings-icon-button"
-                            disabled={!ready || detail.archived}
-                            aria-label={
-                              "Excluir registro de " +
-                              money(entry.amount) +
-                              " em " +
-                              dateLabel(entry.date)
-                            }
-                            onClick={() =>
-                              requestDelete(
-                                "entry",
-                                entry.id,
-                                (entry.kind === "initial"
-                                  ? "Saldo inicial"
-                                  : entry.kind === "deposit"
-                                    ? "Aporte"
-                                    : "Retirada") +
-                                  " de " +
-                                  money(entry.amount),
-                              )
-                            }
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      ))}
-                    {!data.entries.some(
-                      (entry) => entry.goalId === detail.id,
-                    ) && (
-                      <p className="form-note">
-                        O histórico aparece quando você registrar o primeiro
-                        aporte.
-                      </p>
-                    )}
-                  </div>
-                </section>
               )}
             </div>
             <aside
@@ -1070,6 +953,196 @@ export function SavingsPage({
           </div>
         </>
       )}
+
+      <Dialog
+        open={!!detail}
+        onOpenChange={(open) => {
+          if (!open && !busy) setSelected(null);
+        }}
+      >
+        <DialogContent
+          className="finance-dialog savings-detail"
+          showCloseButton={false}
+          onCloseAutoFocus={restoreDetailsFocus}
+          onEscapeKeyDown={(event) => {
+            if (busy) event.preventDefault();
+          }}
+          onPointerDownOutside={(event) => {
+            if (busy) event.preventDefault();
+          }}
+        >
+          {detail && (
+            <>
+              <div className="savings-detail-header">
+                <div>
+                  <span className="eyebrow">HISTÓRICO DO COFRINHO</span>
+                  <DialogTitle>{detail.name}</DialogTitle>
+                  <DialogDescription>
+                    Acompanhe os valores guardados e os movimentos deste
+                    cofrinho.
+                  </DialogDescription>
+                </div>
+                <button
+                  className="savings-icon-button"
+                  aria-label="Fechar detalhes"
+                  disabled={busy}
+                  onClick={() => setSelected(null)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="savings-detail-summary">
+                <div className="savings-card-value">
+                  <strong>{money(goalBalance(detail, data.entries))}</strong>
+                  <span> de {money(detail.target)}</span>
+                </div>
+                <div className="savings-progress-caption">
+                  <span>
+                    {Math.round(goalProgress(detail, data.entries))}% da meta
+                  </span>
+                  <span>
+                    Faltam{" "}
+                    {money(
+                      Math.max(
+                        0,
+                        detail.target - goalBalance(detail, data.entries),
+                      ),
+                    )}
+                  </span>
+                </div>
+                <Progress goal={detail} entries={data.entries} />
+              </div>
+              {notice && (
+                <div className="savings-notice" role="status">
+                  {notice}
+                </div>
+              )}
+              {controller.error && (
+                <div className="error-banner" role="alert">
+                  <span>{controller.error}</span>
+                  <button
+                    className="text-button"
+                    disabled={busy}
+                    onClick={() => void controller.reload()}
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              )}
+              <div className="savings-detail-actions">
+                <button
+                  className="secondary-button"
+                  disabled={!ready || detail.archived}
+                  onClick={() => openGoal(detail)}
+                >
+                  <Pencil size={15} /> Editar meta
+                </button>
+                <button
+                  className="secondary-button"
+                  disabled={
+                    !ready ||
+                    detail.archived ||
+                    goalBalance(detail, data.entries) === 0
+                  }
+                  onClick={() => openEntry(detail, "withdrawal")}
+                >
+                  <ArrowUpRight size={16} /> Registrar retirada
+                </button>
+                <button
+                  className="text-button"
+                  disabled={!ready}
+                  onClick={() => void archive(detail)}
+                >
+                  {detail.archived ? (
+                    <RotateCcw size={16} />
+                  ) : (
+                    <Archive size={16} />
+                  )}
+                  {detail.archived ? "Restaurar" : "Arquivar"}
+                </button>
+                {!data.entries.some((entry) => entry.goalId === detail.id) && (
+                  <button
+                    className="text-button negative"
+                    disabled={!ready}
+                    onClick={() =>
+                      requestDelete("goal", detail.id, detail.name)
+                    }
+                  >
+                    <Trash2 size={15} /> Excluir vazio
+                  </button>
+                )}
+              </div>
+              <div className="savings-history">
+                {data.entries
+                  .filter((entry) => entry.goalId === detail.id)
+                  .sort((a, b) => b.date.localeCompare(a.date))
+                  .map((entry) => (
+                    <div className="savings-history-row" key={entry.id}>
+                      <span className={"savings-movement-icon " + entry.kind}>
+                        {entry.kind !== "withdrawal" ? (
+                          <ArrowDownLeft size={17} />
+                        ) : (
+                          <ArrowUpRight size={17} />
+                        )}
+                      </span>
+                      <div>
+                        <strong>
+                          {entry.kind === "initial"
+                            ? "Saldo inicial"
+                            : entry.kind === "deposit"
+                              ? "Valor guardado"
+                              : "Retirada"}
+                        </strong>
+                        <small>
+                          {dateLabel(entry.date)}
+                          {entry.note ? " · " + entry.note : ""}
+                        </small>
+                      </div>
+                      <strong
+                        className={
+                          entry.kind !== "withdrawal" ? "positive" : "negative"
+                        }
+                      >
+                        {entry.kind !== "withdrawal" ? "+" : "−"}{" "}
+                        {money(entry.amount)}
+                      </strong>
+                      <button
+                        className="savings-icon-button"
+                        disabled={!ready || detail.archived}
+                        aria-label={
+                          "Excluir registro de " +
+                          money(entry.amount) +
+                          " em " +
+                          dateLabel(entry.date)
+                        }
+                        onClick={() =>
+                          requestDelete(
+                            "entry",
+                            entry.id,
+                            (entry.kind === "initial"
+                              ? "Saldo inicial"
+                              : entry.kind === "deposit"
+                                ? "Aporte"
+                                : "Retirada") +
+                              " de " +
+                              money(entry.amount),
+                          )
+                        }
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                {!data.entries.some((entry) => entry.goalId === detail.id) && (
+                  <p className="form-note">
+                    O histórico aparece quando você registrar o primeiro aporte.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!form}
