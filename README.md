@@ -6,13 +6,19 @@ O nome do sistema é **Zelo**, mas a pasta do projeto pode continuar como `folga
 
 ## Versão inicial
 
-**v0.1.0 — MVP de controle financeiro pessoal.** Esta primeira versão reúne dashboard, lançamentos, parcelas, metas, demonstrativo e exportação de extratos. O uso local já possui armazenamento persistente; cadastro, login próprio e acesso público para outros usuários estão nas próximas etapas.
+**Branch experimental `feature/cofrinhos`, criada a partir da `main` v0.1.0.** Esta versão mantém dashboard, lançamentos, parcelas, demonstrativo e exportação de extratos, e substitui a meta de sobra mensal por **cofrinhos pessoais**: objetivos com valor, prazo, planejamento mensal e registro de aportes.
+
+As três branches têm propósitos distintos: [`main`](https://github.com/ocaiofirmino/zelo-financas/tree/main) preserva o MVP original; [`demo/vercel`](https://github.com/ocaiofirmino/zelo-financas/tree/demo/vercel) contém a demonstração pública; [`feature/cofrinhos`](https://github.com/ocaiofirmino/zelo-financas/tree/feature/cofrinhos) contém esta função em teste. Não foi feito PR nem merge desta alteração.
+
+O uso pessoal possui armazenamento persistente. Cadastro e login próprios para usuários externos continuam nas próximas etapas. Veja o [guia dos cofrinhos](docs/COFRINHOS.md) para usar a função e atualizar o banco local.
+
+![Cofrinhos pessoais com metas e próximos aportes, usando valores fictícios](docs/media/cofrinhos.png)
 
 A revisão da primeira versão, os testes executados e as limitações conhecidas estão em [Avaliação da v0.1.0](docs/AVALIACAO-v0.1.0.md).
 
 ## Veja o Zelo em funcionamento
 
-Um motion de **40 segundos**, em formato horizontal, mostra o dashboard, o cadastro de um gasto, os lançamentos, o cartão, o demonstrativo e as opções de exportação. As imagens são **capturas reais do sistema**, com dados fictícios do modo Demonstração. O vídeo tem legendas explicativas e não possui áudio.
+Um motion de **40 segundos**, em formato horizontal, mostra o dashboard, o cadastro de um gasto, os lançamentos, o cartão, o demonstrativo e as opções de exportação. As imagens são **capturas reais da v0.1.0, anteriores aos cofrinhos**, com dados fictícios do modo Demonstração. O vídeo tem legendas explicativas e não possui áudio.
 
 ![Motion do Zelo com capturas reais das telas](docs/media/zelo-motion-preview.gif)
 
@@ -63,20 +69,21 @@ Seleção do período e do formato Excel, CSV ou CSV preparado para importar no 
 
 O Zelo foi criado para facilitar o cuidado com o dinheiro no dia a dia. Ao registrar o que você recebe e gasta, fica mais fácil entender seus hábitos, lembrar das contas que ainda vão vencer e planejar quanto pretende deixar de sobra no mês.
 
-A ideia de uso é simples: **registrar, acompanhar e ajustar**. Você registra as movimentações, acompanha o resultado e as categorias e ajusta seus próximos gastos conforme a sua realidade. Por exemplo, ao perceber que Alimentação está consumindo boa parte do orçamento, pode definir um limite para acompanhar essa categoria.
+A ideia de uso é simples: **registrar, acompanhar e ajustar**. Você registra as movimentações, acompanha o resultado e as categorias e ajusta seus próximos gastos conforme a sua realidade. Por exemplo, ao perceber que Alimentação está consumindo boa parte do orçamento, pode definir um limite para acompanhar essa categoria. Nos cofrinhos, você também planeja quanto guardar para cada objetivo e registra os valores que reservou.
 
 O sistema ajuda a responder três perguntas: **quanto entrou, para onde foi e quanto está previsto sobrar?** O nome Zelo representa esse cuidado contínuo com as finanças. Nesta versão, você faz os registros manualmente; as dicas automáticas de economia ficam para uma etapa futura.
 
 ## O que o sistema faz
 
-| Tela | Função |
-| --- | --- |
-| **Meu mês** | Resultado realizado e previsto, evolução do mês, meta de sobra, despesas por categoria, próximos vencimentos e últimos lançamentos. |
-| **Lançamentos** | Cadastro, edição e exclusão de receitas e despesas, com busca e filtros por tipo, categoria e situação. |
-| **Cartão** | Acompanhamento das compras cadastradas manualmente e das parcelas distribuídas pelos meses seguintes. |
-| **Demonstrativo** | Resumo por categoria, receitas por origem, limites de gasto e comparação com o mês anterior. |
+| Tela              | Função                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Meu mês**       | Resultado realizado e previsto, evolução do mês, resumo dos cofrinhos, despesas por categoria, próximos vencimentos e últimos lançamentos. |
+| **Lançamentos**   | Cadastro, edição e exclusão de receitas e despesas, com busca e filtros por tipo, categoria e situação.                                    |
+| **Cartão**        | Acompanhamento das compras cadastradas manualmente e das parcelas distribuídas pelos meses seguintes.                                      |
+| **Demonstrativo** | Resumo por categoria, receitas por origem, limites de gasto e comparação com o mês anterior.                                               |
+| **Cofrinhos**     | Metas pessoais com valor e prazo, dias de recebimento, sugestões de aporte, progresso e histórico do dinheiro guardado ou retirado.        |
 
-Também é possível definir uma **meta de sobra mensal**, configurar **limites por categoria** e **baixar extratos em XLSX ou CSV**, incluindo uma versão preparada para o Power BI.
+É possível criar **quantos cofrinhos quiser**, configurar **limites por categoria** e **baixar extratos financeiros em XLSX ou CSV**, incluindo uma versão preparada para o Power BI. A exportação atual continua cobrindo receitas, despesas e parcelas; o histórico dos cofrinhos é consultado no sistema e ainda não entra nesses extratos.
 
 ## Tutorial simples: seu primeiro mês no Zelo
 
@@ -88,7 +95,7 @@ Com o sistema aberto no navegador, siga estes passos:
 4. **Cadastre o que gastou.** Abra **Novo lançamento** novamente e escolha **Despesa**. Informe os dados, selecione a categoria correspondente — como Moradia ou Alimentação — e use **Já pago** quando a conta já estiver quitada. Salve o lançamento.
 5. **Anote as próximas contas.** Cadastre também as despesas que ainda não pagou, com a data de vencimento e a situação **Previsto**. Quando pagar, abra o registro em **Lançamentos**, edite a situação para **Já pago** e salve. Assim, ele passa de previsto para realizado.
 6. **Veja o resultado.** Volte para **Meu mês**. **Resultado do mês** mostra o que já recebeu menos o que já pagou. **Previsto ao fechar** também considera as receitas e despesas previstas. Em **Para onde foi**, clique em uma categoria para consultar os gastos.
-7. **Defina uma meta.** Em **Meta e limites**, informe quanto quer deixar de sobra no mês e, se desejar, um teto de gasto por categoria. Clique em **Salvar meta e limites**. A meta acompanha a sobra; guardar ou transferir esse dinheiro é uma ação que você realiza fora do sistema.
+7. **Planeje suas metas.** Abra **Cofrinhos**, clique em **Novo cofrinho**, dê um nome, informe o valor desejado e o prazo. Defina quanto pretende guardar por mês e seus dias de recebimento, como 5 e 15. Depois, use **Guardar** para registrar cada aporte. A barra acompanha os aportes registrados, sem depender do resultado do mês. Em **Limites de gasto**, você continua definindo os tetos de gasto por categoria.
 8. **Revise e baixe seu extrato.** Use **Lançamentos** para buscar ou corrigir registros, **Cartão** para acompanhar parcelas e **Demonstrativo** para conferir os totais por categoria. Em **Baixar extrato**, escolha o período e o formato Excel, CSV ou Power BI.
 
 O atalho **Ctrl + K** — ou **Command + K** no Mac — também abre o formulário de lançamento.
@@ -97,12 +104,12 @@ O atalho **Ctrl + K** — ou **Command + K** no Mac — também abre o formulár
 
 Imagine que você registrou estes quatro lançamentos no mesmo mês:
 
-| Descrição | Tipo | Categoria | Situação no formulário | Valor |
-| --- | --- | --- | --- | --- |
-| Salário | Receita | Salário | Já recebido | R$ 3.000,00 |
-| Aluguel | Despesa | Moradia | Já pago | R$ 1.200,00 |
-| Mercado | Despesa | Alimentação | Já pago | R$ 300,00 |
-| Energia | Despesa | Moradia | Previsto | R$ 200,00 |
+| Descrição | Tipo    | Categoria   | Situação no formulário | Valor       |
+| --------- | ------- | ----------- | ---------------------- | ----------- |
+| Salário   | Receita | Salário     | Já recebido            | R$ 3.000,00 |
+| Aluguel   | Despesa | Moradia     | Já pago                | R$ 1.200,00 |
+| Mercado   | Despesa | Alimentação | Já pago                | R$ 300,00   |
+| Energia   | Despesa | Moradia     | Previsto               | R$ 200,00   |
 
 O Zelo mostrará **R$ 3.000,00 recebidos**, **R$ 1.500,00 pagos** e um **resultado do mês de R$ 1.500,00**. Como ainda há R$ 200,00 de energia a pagar, o **previsto ao fechar será R$ 1.300,00**. Quando marcar a energia como paga, o resultado realizado também será R$ 1.300,00. Esses resultados consideram as movimentações cadastradas no mês, sem incluir um saldo bancário inicial.
 
@@ -138,10 +145,11 @@ Execute os comandos abaixo, um de cada vez:
 npm.cmd run install:ci
 npm.cmd run build
 npm.cmd run db:setup
+npm.cmd run db:cofrinhos
 npm.cmd run dev
 ```
 
-**Execute `db:setup` somente para preparar um banco novo e vazio.** Essa etapa cria as tabelas iniciais; não deve ser repetida a cada atualização.
+**Execute `db:setup` somente para preparar um banco novo e vazio.** Essa etapa cria as tabelas iniciais; não deve ser repetida a cada atualização. `db:cofrinhos` aplica a nova migração uma única vez. Se o banco já possui seus lançamentos, não repita `db:setup`: faça backup, compile e aplique apenas `db:cofrinhos`. Veja as instruções no [guia dos cofrinhos](docs/COFRINHOS.md).
 
 Se a porta 5173 estiver ocupada, encerre a outra execução conhecida do projeto com **Ctrl + C** no terminal dela ou escolha outra porta:
 
@@ -157,13 +165,13 @@ $env:XDG_CONFIG_HOME = Join-Path (Get-Location) '.sites-runtime/config'
 
 ## Baixar extrato: Excel, CSV e Power BI
 
-O botão **Baixar extrato** aparece no topo das quatro telas. Escolha o **mês selecionado** ou **Todo o histórico**, selecione o formato e clique para baixar.
+O botão **Baixar extrato** aparece no topo das cinco telas. Escolha o **mês selecionado** ou **Todo o histórico**, selecione o formato e clique para baixar.
 
-| Formato | Conteúdo e uso |
-| --- | --- |
-| **Excel (.xlsx)** | Abas **Resumo** e **Lançamentos**, com valores numéricos, datas, fórmulas de resultado no resumo, filtros e cabeçalho fixo. |
-| **CSV (.csv)** | Cabeçalhos em português, separador ponto e vírgula, datas no formato `dd/mm/aaaa` e vírgula decimal. |
-| **Power BI (.csv)** | Cabeçalhos estáveis em `snake_case`, separador vírgula, datas ISO, ponto decimal e valores em centavos para somas exatas. |
+| Formato             | Conteúdo e uso                                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Excel (.xlsx)**   | Abas **Resumo** e **Lançamentos**, com valores numéricos, datas, fórmulas de resultado no resumo, filtros e cabeçalho fixo. |
+| **CSV (.csv)**      | Cabeçalhos em português, separador ponto e vírgula, datas no formato `dd/mm/aaaa` e vírgula decimal.                        |
+| **Power BI (.csv)** | Cabeçalhos estáveis em `snake_case`, separador vírgula, datas ISO, ponto decimal e valores em centavos para somas exatas.   |
 
 Os CSVs usam **UTF-8 com BOM** para preservar os acentos. A geração dos arquivos acontece no navegador, sem envio a um serviço de conversão.
 
@@ -193,13 +201,14 @@ Os valores financeiros são armazenados em **centavos inteiros**.
 
 - **Resultado realizado:** receitas recebidas menos despesas pagas.
 - **Resultado previsto:** todas as receitas do mês menos todas as despesas do mês, incluindo as pendentes.
-- **Meta de sobra:** usa o resultado do mês como referência.
+- **Saldo do cofrinho:** aportes registrados menos retiradas registradas.
+- **Progresso da meta:** saldo do cofrinho dividido pelo objetivo total, com a barra limitada visualmente a 100%.
 
-O resultado representa o fluxo do mês e não inclui um saldo bancário inicial. A meta não registra uma transferência para uma reserva. Os valores do cartão são informados manualmente; não existe conexão automática com bancos ou operadoras.
+O resultado representa o fluxo do mês e não inclui um saldo bancário inicial. Aportes nos cofrinhos são registros de reserva: não criam uma nova despesa, e retiradas não criam uma nova receita. Assim, os mesmos valores não são contados duas vezes no demonstrativo. Não há transferência bancária; os valores do cartão e dos cofrinhos são informados manualmente.
 
 ## Dados salvos e login
 
-Os registros e as configurações de metas e limites são gravados pela API em **SQLite / Cloudflare D1**. No desenvolvimento local, o banco fica em **`.wrangler/state`**, dentro da pasta do projeto.
+Os lançamentos, limites, cofrinhos e seus aportes são gravados pela API em **SQLite / Cloudflare D1**, vinculados ao usuário. No desenvolvimento local, o banco fica em **`.wrangler/state`**, dentro da pasta do projeto.
 
 **Fechar o navegador, o VS Code ou o servidor local não apaga os dados gravados.** Preserve essa pasta ao fazer backup ou transferir o ambiente para outro local. Um ZIP contendo apenas o código não é um backup dos registros financeiros.
 
@@ -257,19 +266,22 @@ A interface separada **zelo-login**, feita em HTML, CSS e JavaScript, é um prot
 
 ## Onde modificar
 
-| Arquivo ou pasta | Responsabilidade |
-| --- | --- |
-| `app/finance-full.tsx` | Telas principais, navegação, estado e formulários. |
-| `app/finance.css` | Paleta, tamanhos, espaçamento, componentes, responsividade e animações. |
-| `app/export-statement.tsx` | Janela de exportação, escolha do período/formato e download. |
-| `lib/finance.ts` | Categorias, cálculos, validações, parcelas e exemplos da demonstração. |
-| `lib/finance-export.ts` | Seleção dos registros e geração de XLSX, CSV e CSV para BI. |
-| `app/api/finance/route.ts` | Leitura, gravação, edição e exclusão dos dados por usuário. |
-| `db/schema.ts` | Estrutura do banco de dados. |
-| `drizzle/` | Migrações do banco. |
-| `app/layout.tsx` | Título da página, idioma, estilos gerais e favicons. |
-| `public/` | Logo, ícones e fontes. |
-| `tests/` | Verificações dos cálculos, exportações e API. |
+| Arquivo ou pasta           | Responsabilidade                                                               |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| `app/finance-full.tsx`     | Telas principais, navegação, estado e formulários.                             |
+| `app/finance.css`          | Paleta, tamanhos, espaçamento, componentes, responsividade e animações.        |
+| `app/export-statement.tsx` | Janela de exportação, escolha do período/formato e download.                   |
+| `lib/finance.ts`           | Categorias, cálculos, validações, parcelas e exemplos da demonstração.         |
+| `app/savings.tsx`          | Interface dos cofrinhos, formulários, histórico e estado pessoal/demonstração. |
+| `lib/savings.ts`           | Cálculos das metas, calendário dos aportes, rateio em centavos e validações.   |
+| `lib/finance-export.ts`    | Seleção dos registros e geração de XLSX, CSV e CSV para BI.                    |
+| `app/api/finance/route.ts` | Leitura, gravação, edição e exclusão dos dados por usuário.                    |
+| `app/api/savings/route.ts` | Persistência dos cofrinhos e aportes, com isolamento por usuário.              |
+| `db/schema.ts`             | Estrutura do banco de dados.                                                   |
+| `drizzle/`                 | Migrações do banco.                                                            |
+| `app/layout.tsx`           | Título da página, idioma, estilos gerais e favicons.                           |
+| `public/`                  | Logo, ícones e fontes.                                                         |
+| `tests/`                   | Verificações dos cálculos, exportações e API.                                  |
 
 As cores estão nas variáveis no início de `app/finance.css`. Os arquivos CSS e TSX usam indentação e quebras de linha para facilitar a edição.
 
@@ -281,14 +293,17 @@ O cabeçalho em formato de ilha dinâmica reúne logo, navegação e mês. Em te
 
 ## Comandos de desenvolvimento
 
-| Comando | Função |
-| --- | --- |
-| `npm.cmd run dev` | Iniciar o servidor de desenvolvimento. |
-| `npm.cmd run build` | Compilar o projeto. |
-| `npm.cmd run lint` | Conferir o código com ESLint. |
-| `npm.cmd run test:finance` | Conferir cálculos, centavos, datas e divisão das parcelas. |
-| `npm.cmd run test:export` | Conferir períodos, CSV, proteção de textos e estrutura do XLSX. |
-| `npm.cmd run db:generate` | Gerar migrações após mudanças no esquema do banco. |
+| Comando                        | Função                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| `npm.cmd run dev`              | Iniciar o servidor de desenvolvimento.                                              |
+| `npm.cmd run build`            | Compilar o projeto.                                                                 |
+| `npm.cmd run lint`             | Conferir o código com ESLint.                                                       |
+| `npm.cmd run test:finance`     | Conferir cálculos, centavos, datas e divisão das parcelas.                          |
+| `npm.cmd run test:export`      | Conferir períodos, CSV, proteção de textos e estrutura do XLSX.                     |
+| `npm.cmd run test:savings`     | Conferir metas, prazos, datas de aporte e rateio em centavos.                       |
+| `npm.cmd run test:savings-api` | Conferir persistência e isolamento dos cofrinhos com um Worker local na porta 5174. |
+| `npm.cmd run db:cofrinhos`     | Aplicar uma vez a migração dos cofrinhos no banco local já preparado.               |
+| `npm.cmd run db:generate`      | Gerar migrações após mudanças no esquema do banco.                                  |
 
 Migrações novas devem ser revisadas e aplicadas ao banco correspondente. O comando inicial `db:setup` não substitui esse processo.
 

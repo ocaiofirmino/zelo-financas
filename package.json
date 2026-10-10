@@ -13,8 +13,11 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:setup": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_wonderful_thunderbird.sql",
+    "db:cofrinhos": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_cofrinhos.sql",
     "test:finance": "node --experimental-strip-types tests/check-finance.mjs",
-    "test:export": "node --experimental-strip-types tests/check-export.mjs"
+    "test:export": "node --experimental-strip-types tests/check-export.mjs",
+    "test:savings": "node --experimental-strip-types tests/check-savings.mjs",
+    "test:savings-api": "node tests/check-savings-api.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

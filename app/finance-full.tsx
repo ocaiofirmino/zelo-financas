@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import ExportStatement from "./export-statement";
+import { SavingsOverview, SavingsPage, useSavings } from "./savings";
 import {
   useCallback,
   useEffect,
@@ -27,6 +28,7 @@ import {
   Trash2,
   Check,
   RotateCcw,
+  PiggyBank,
 } from "lucide-react";
 import {
   Dialog,
@@ -57,7 +59,7 @@ import {
   type Transaction,
   type Settings,
 } from "@/lib/finance";
-type View = "overview" | "transactions" | "cards" | "statement";
+type View = "overview" | "transactions" | "cards" | "statement" | "savings";
 type Draft = {
   description: string;
   amount: string;
@@ -72,6 +74,7 @@ const nav = [
   { view: "overview" as View, label: "Meu mês", icon: LayoutDashboard },
   { view: "transactions" as View, label: "Lançamentos", icon: ReceiptText },
   { view: "cards" as View, label: "Cartão", icon: CreditCard },
+  { view: "savings" as View, label: "Cofrinhos", icon: PiggyBank },
   {
     view: "statement" as View,
     label: "Demonstrativo",
@@ -83,6 +86,7 @@ const titles = {
   transactions: "Lançamentos.",
   cards: "Cartão e parcelas.",
   statement: "Demonstrativo do mês.",
+  savings: "Meus cofrinhos.",
 };
 function demoData() {
   const month = localMonth();
@@ -158,8 +162,8 @@ export default function FinanceApp() {
     [formError, setFormError] = useState(""),
     [deleteEntry, setDeleteEntry] = useState<Transaction | null>(null),
     [planOpen, setPlanOpen] = useState(false),
-    [goalDraft, setGoalDraft] = useState(""),
     [budgetDraft, setBudgetDraft] = useState<Record<string, string>>({});
+  const savings = useSavings(demo);
   const dialogReturnFocus = useRef<HTMLElement | null>(null);
   function rememberDialogFocus() {
     dialogReturnFocus.current =
@@ -182,10 +186,7 @@ export default function FinanceApp() {
     previousRows = allRows.filter(
       (r) => r.date.slice(0, 7) === shiftMonth(month, -1),
     ),
-    previous = totals(previousRows),
-    progress = settings.goal
-      ? Math.min(100, Math.max(0, (summary.result / settings.goal) * 100))
-      : 0;
+    previous = totals(previousRows);
   const load = useCallback(async () => {
     setLoadError("");
     setLoaded(false);
@@ -222,7 +223,8 @@ export default function FinanceApp() {
           exportOpen ||
           planOpen ||
           deleteEntry ||
-          (!demo && !loaded)
+          (!demo && !loaded) ||
+          view === "savings"
         )
           return;
         setEditing(null);
@@ -234,8 +236,22 @@ export default function FinanceApp() {
     }
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [busy, entryOpen, exportOpen, planOpen, deleteEntry, demo, loaded, month]);
+  }, [
+    busy,
+    entryOpen,
+    exportOpen,
+    planOpen,
+    deleteEntry,
+    demo,
+    loaded,
+    month,
+    view,
+  ]);
   function chooseMode(next: boolean) {
+    if (busy || savings.busy) return;
+    setEntryOpen(false);
+    setPlanOpen(false);
+    setDeleteEntry(null);
     setDemo(next);
     localStorage.setItem("folga-data-mode", next ? "demo" : "real");
     setNotice(
@@ -267,7 +283,6 @@ export default function FinanceApp() {
   function openPlan() {
     if (busy || (!demo && !loaded)) return;
     rememberDialogFocus();
-    setGoalDraft((settings.goal / 100).toFixed(2).replace(".", ","));
     setBudgetDraft(
       Object.fromEntries(
         categories.map((cat) => [
@@ -377,12 +392,12 @@ export default function FinanceApp() {
     setBusy(true);
     setFormError("");
     try {
-      const goal = parseAmount(goalDraft || "0"),
+      const goal = settings.goal,
         budgets = Object.fromEntries(
           categories.map((cat) => [cat, parseAmount(budgetDraft[cat] || "0")]),
         );
       if (
-        [goal, ...Object.values(budgets)].some(
+        Object.values(budgets).some(
           (v) => !Number.isSafeInteger(v) || v < 0 || v > 1000000000,
         )
       )
@@ -396,8 +411,8 @@ export default function FinanceApp() {
       setPlanOpen(false);
       setNotice(
         demo
-          ? "Meta e limites de teste atualizados."
-          : "Meta e limites deste mês salvos.",
+          ? "Limites de teste atualizados."
+          : "Limites de gastos deste mês salvos.",
       );
     } catch (error) {
       setFormError(
@@ -424,13 +439,19 @@ export default function FinanceApp() {
             name: "navigate_finance_view",
             title: "Abrir uma tela de finanças",
             description:
-              "Abre o dashboard, lançamentos, cartão ou demonstrativo; não altera registros.",
+              "Abre o dashboard, lançamentos, cartão, cofrinhos ou demonstrativo; não altera registros.",
             inputSchema: {
               type: "object",
               properties: {
                 view: {
                   type: "string",
-                  enum: ["overview", "transactions", "cards", "statement"],
+                  enum: [
+                    "overview",
+                    "transactions",
+                    "cards",
+                    "statement",
+                    "savings",
+                  ],
                 },
               },
               required: ["view"],
@@ -607,7 +628,11 @@ export default function FinanceApp() {
               <span className="mode-pill">
                 {demo ? "Demonstração" : loaded ? "Meu controle" : "Carregando"}
               </span>
-              <button className="text-button" onClick={() => chooseMode(!demo)}>
+              <button
+                className="text-button"
+                disabled={busy || savings.busy}
+                onClick={() => chooseMode(!demo)}
+              >
                 {demo ? "Usar meus dados" : "Ver demonstração"}
               </button>
             </div>
@@ -626,7 +651,7 @@ export default function FinanceApp() {
                 onClick={openPlan}
                 disabled={busy || (!demo && !loaded)}
               >
-                <SlidersHorizontal size={16} /> Meta e limites
+                <SlidersHorizontal size={16} /> Limites de gasto
               </button>
             </div>
           </div>
@@ -706,40 +731,11 @@ export default function FinanceApp() {
                     Entradas e saídas do mês, sem saldo bancário inicial.
                   </p>
                 </section>
-                <section className="goal-panel" aria-labelledby="goal-heading">
-                  <div className="section-head">
-                    <h2 id="goal-heading">Meta de sobra</h2>
-                    <button
-                      className="goal-edit"
-                      aria-label="Editar meta do mês"
-                      disabled={busy || (!demo && !loaded)}
-                      onClick={openPlan}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                  </div>
-                  <GoalRing progress={progress} />
-                  {settings.goal > 0 ? (
-                    <>
-                      <p className="goal-caption">
-                        de <strong>{money(settings.goal)}</strong> em sobra
-                      </p>
-                      <span className="goal-footnote">
-                        {progress >= 100
-                          ? "Meta do mês alcançada"
-                          : "Um passo de cada vez"}
-                      </span>
-                    </>
-                  ) : (
-                    <button
-                      className="text-button"
-                      onClick={openPlan}
-                      disabled={busy || (!demo && !loaded)}
-                    >
-                      Definir minha meta
-                    </button>
-                  )}
-                </section>
+                <SavingsOverview
+                  controller={savings}
+                  month={month}
+                  onOpen={() => setView("savings")}
+                />
                 <section
                   className="category-panel"
                   aria-labelledby="category-heading"
@@ -935,6 +931,13 @@ export default function FinanceApp() {
                 )}
               </section>
             </>
+          )}
+          {view === "savings" && (
+            <SavingsPage
+              key={demo ? "demo" : "personal"}
+              controller={savings}
+              month={month}
+            />
           )}
           {view === "transactions" && (
             <section className="list-panel">
@@ -1287,18 +1290,20 @@ export default function FinanceApp() {
           </footer>
         </div>
       </main>
-      <div className="floating-entry">
-        <button
-          className="floating-button"
-          disabled={busy || (!demo && !loaded)}
-          onClick={() => openEntry()}
-          aria-keyshortcuts="Control+k Meta+k"
-        >
-          <Plus size={20} />
-          <span>Novo lançamento</span>
-          <kbd className="shortcut">Ctrl K</kbd>
-        </button>
-      </div>
+      {view !== "savings" && (
+        <div className="floating-entry">
+          <button
+            className="floating-button"
+            disabled={busy || (!demo && !loaded)}
+            onClick={() => openEntry()}
+            aria-keyshortcuts="Control+k Meta+k"
+          >
+            <Plus size={20} />
+            <span>Novo lançamento</span>
+            <kbd className="shortcut">Ctrl K</kbd>
+          </button>
+        </div>
+      )}
       <Dialog
         open={entryOpen}
         onOpenChange={(open) => {
@@ -1508,21 +1513,12 @@ export default function FinanceApp() {
           className="finance-dialog"
           onCloseAutoFocus={restoreDialogFocus}
         >
-          <DialogTitle>Meta e limites de {monthTitle(month)}</DialogTitle>
+          <DialogTitle>Limites de gasto de {monthTitle(month)}</DialogTitle>
           <DialogDescription>
-            Escolha quanto quer que sobre e um teto para cada categoria neste
-            mês.
+            Defina um teto para cada categoria neste mês. Suas metas de dinheiro
+            guardado ficam na página Cofrinhos.
           </DialogDescription>
           <form className="finance-form" onSubmit={savePlan}>
-            <label>
-              Meta de sobra no mês (R$)
-              <input
-                autoFocus
-                inputMode="decimal"
-                value={goalDraft}
-                onChange={(e) => setGoalDraft(e.target.value)}
-              />
-            </label>
             <h3>Limites de gastos</h3>
             <p className="form-note">Deixe zero para não definir um limite.</p>
             <div className="budget-fields">
@@ -1554,7 +1550,7 @@ export default function FinanceApp() {
                 Cancelar
               </button>
               <button className="primary-button" disabled={busy}>
-                {busy ? "Salvando…" : "Salvar meta e limites"}
+                {busy ? "Salvando…" : "Salvar limites"}
               </button>
             </div>
           </form>
@@ -1643,46 +1639,6 @@ function AnimatedNumber({
       <span aria-hidden="true">{format(display)}</span>
       <span className="sr-only">{format(value)}</span>
     </>
-  );
-}
-
-function GoalRing({ progress }: { progress: number }) {
-  return (
-    <div
-      className="goal-ring"
-      role="progressbar"
-      aria-label="Sobra do mês em relação à meta"
-      aria-valuenow={Math.round(progress)}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      style={{ "--ring-progress": progress } as CSSProperties}
-    >
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle
-          className="ring-track"
-          cx="60"
-          cy="60"
-          r="52"
-          fill="none"
-          strokeWidth="9"
-        />
-        <circle
-          className="ring-progress"
-          cx="60"
-          cy="60"
-          r="52"
-          fill="none"
-          strokeWidth="9"
-          pathLength="100"
-          strokeDasharray="100"
-          strokeDashoffset={100 - progress}
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="ring-value">
-        <AnimatedNumber value={progress} percentage />
-      </div>
-    </div>
   );
 }
 
