@@ -1,13 +1,16 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ExportStatement from "./export-statement";
 import SiteFooter from "./site-footer";
+import { MotionNav, transitionUI, useMotionDirector, useMotionView } from "./motion";
+import { ProfileAvatar, ProfilePage, useProfile } from "./profile";
+import { SavingsOverview, SavingsPage, useSavings } from "./savings";
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import {
   ArrowDownLeft,
@@ -28,6 +31,10 @@ import {
   Trash2,
   Check,
   RotateCcw,
+  ShieldCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PiggyBank,
 } from "lucide-react";
 import {
   Dialog,
@@ -58,7 +65,7 @@ import {
   type Transaction,
   type Settings,
 } from "@/lib/finance";
-type View = "overview" | "transactions" | "cards" | "statement";
+type View = "overview" | "transactions" | "cards" | "statement" | "savings" | "profile";
 type Draft = {
   description: string;
   amount: string;
@@ -73,6 +80,7 @@ const nav = [
   { view: "overview" as View, label: "Meu mês", icon: LayoutDashboard },
   { view: "transactions" as View, label: "Lançamentos", icon: ReceiptText },
   { view: "cards" as View, label: "Cartão", icon: CreditCard },
+  { view: "savings" as View, label: "Cofrinhos", icon: PiggyBank },
   {
     view: "statement" as View,
     label: "Demonstrativo",
@@ -84,6 +92,8 @@ const titles = {
   transactions: "Lançamentos.",
   cards: "Cartão e parcelas.",
   statement: "Demonstrativo do mês.",
+  savings: "Meus cofrinhos.",
+  profile: "Meu perfil.",
 };
 function demoData() {
   const month = localMonth();
@@ -133,8 +143,9 @@ async function api(method: string, data?: unknown) {
     );
   return result;
 }
-export default function FinanceApp() {
-  const [view, setView] = useState<View>("overview"),
+export default function FinanceApp({ previewOnly = false, initialView = "overview", initialProfileEditing = false }: { previewOnly?: boolean; initialView?: View; initialProfileEditing?: boolean }) {
+  const router = useRouter();
+  const [view, setView] = useMotionView<View>(initialView),
     [month, setMonth] = useState(localMonth()),
     [demo, setDemo] = useState(true),
     [exampleRows, setExampleRows] = useState<Transaction[]>(demoData),
@@ -148,6 +159,7 @@ export default function FinanceApp() {
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [leavingId, setLeavingId] = useState<string | null>(null);
+  const [sidebarCompact, setSidebarCompact] = useState(false);
   const [query, setQuery] = useState(""),
     [typeFilter, setTypeFilter] = useState("all"),
     [statusFilter, setStatusFilter] = useState("all"),
@@ -159,8 +171,14 @@ export default function FinanceApp() {
     [formError, setFormError] = useState(""),
     [deleteEntry, setDeleteEntry] = useState<Transaction | null>(null),
     [planOpen, setPlanOpen] = useState(false),
-    [goalDraft, setGoalDraft] = useState(""),
     [budgetDraft, setBudgetDraft] = useState<Record<string, string>>({});
+  const savings = useSavings(demo);
+  const personalProfile = useProfile(demo);
+  const workspaceMotion = useMotionDirector(view + ":" + month + ":" + demo);
+  function navigateMain(next: View) {
+    if (initialView === "profile") { router.push("/app?view=" + next); return; }
+    setView(next);
+  }
   const dialogReturnFocus = useRef<HTMLElement | null>(null);
   function rememberDialogFocus() {
     dialogReturnFocus.current =
@@ -183,10 +201,7 @@ export default function FinanceApp() {
     previousRows = allRows.filter(
       (r) => r.date.slice(0, 7) === shiftMonth(month, -1),
     ),
-    previous = totals(previousRows),
-    progress = settings.goal
-      ? Math.min(100, Math.max(0, (summary.result / settings.goal) * 100))
-      : 0;
+    previous = totals(previousRows);
   const load = useCallback(async () => {
     setLoadError("");
     setLoaded(false);
@@ -204,10 +219,11 @@ export default function FinanceApp() {
     }
   }, []);
   useEffect(() => {
+    if (previewOnly) return;
     const pref = localStorage.getItem("folga-data-mode");
     if (pref) setDemo(pref === "demo");
     void load();
-  }, [load]);
+  }, [load, previewOnly]);
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(""), 5000);
@@ -223,7 +239,8 @@ export default function FinanceApp() {
           exportOpen ||
           planOpen ||
           deleteEntry ||
-          (!demo && !loaded)
+          (!demo && !loaded) ||
+          (view === "savings" || view === "profile")
         )
           return;
         setEditing(null);
@@ -235,8 +252,23 @@ export default function FinanceApp() {
     }
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [busy, entryOpen, exportOpen, planOpen, deleteEntry, demo, loaded, month]);
+  }, [
+    busy,
+    entryOpen,
+    exportOpen,
+    planOpen,
+    deleteEntry,
+    demo,
+    loaded,
+    month,
+    view,
+  ]);
   function chooseMode(next: boolean) {
+    if (busy || savings.busy || personalProfile.busy) return;
+    if (previewOnly && !next) { router.push("/cadastro"); return; }
+    setEntryOpen(false);
+    setPlanOpen(false);
+    setDeleteEntry(null);
     setDemo(next);
     localStorage.setItem("folga-data-mode", next ? "demo" : "real");
     setNotice(
@@ -268,7 +300,6 @@ export default function FinanceApp() {
   function openPlan() {
     if (busy || (!demo && !loaded)) return;
     rememberDialogFocus();
-    setGoalDraft((settings.goal / 100).toFixed(2).replace(".", ","));
     setBudgetDraft(
       Object.fromEntries(
         categories.map((cat) => [
@@ -378,12 +409,12 @@ export default function FinanceApp() {
     setBusy(true);
     setFormError("");
     try {
-      const goal = parseAmount(goalDraft || "0"),
+      const goal = settings.goal,
         budgets = Object.fromEntries(
           categories.map((cat) => [cat, parseAmount(budgetDraft[cat] || "0")]),
         );
       if (
-        [goal, ...Object.values(budgets)].some(
+        Object.values(budgets).some(
           (v) => !Number.isSafeInteger(v) || v < 0 || v > 1000000000,
         )
       )
@@ -397,8 +428,8 @@ export default function FinanceApp() {
       setPlanOpen(false);
       setNotice(
         demo
-          ? "Meta e limites de teste atualizados."
-          : "Meta e limites deste mês salvos.",
+          ? "Limites de teste atualizados."
+          : "Limites de gastos deste mês salvos.",
       );
     } catch (error) {
       setFormError(
@@ -425,13 +456,19 @@ export default function FinanceApp() {
             name: "navigate_finance_view",
             title: "Abrir uma tela de finanças",
             description:
-              "Abre o dashboard, lançamentos, cartão ou demonstrativo; não altera registros.",
+              "Abre o dashboard, lançamentos, cartão, cofrinhos ou demonstrativo; não altera registros.",
             inputSchema: {
               type: "object",
               properties: {
                 view: {
                   type: "string",
-                  enum: ["overview", "transactions", "cards", "statement"],
+                  enum: [
+                    "overview",
+                    "transactions",
+                    "cards",
+                    "statement",
+                    "savings",
+                  ],
                 },
               },
               required: ["view"],
@@ -453,7 +490,7 @@ export default function FinanceApp() {
       ).catch(() => {});
     } catch {}
     return () => lifecycle.abort();
-  }, []);
+  }, [setView]);
   const filtered = rows
     .filter(
       (r) =>
@@ -594,25 +631,40 @@ export default function FinanceApp() {
     shiftMonth(month, i + 1),
   ).filter((value) => value <= "2100-12");
   return (
-    <div className="app-shell">
+    <div data-view={view} className={"app-shell studio-shell " + (sidebarCompact ? "sidebar-compact" : "")}>
+      <aside className="studio-sidebar" aria-label="Navegação principal">
+        <Link href="/app" className="studio-brand" onClick={() => setView("overview")} aria-label="Zelo, início">{/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/zelo-logo.png" width={36} height={36} alt="" /><span>Zelo<span>.</span></span></Link>
+        <button className="sidebar-collapse" aria-label={sidebarCompact ? "Expandir navegação" : "Recolher navegação"} onClick={() => transitionUI(() => setSidebarCompact(!sidebarCompact))}>{sidebarCompact ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
+        <span className="sidebar-caption">SEU ESPAÇO</span>
+        <MotionNav value={view} label="Navegação do Zelo">{nav.map(item => <button key={item.view} title={item.label} className={"studio-nav " + (view === item.view ? "selected" : "")} aria-current={view === item.view ? "page" : undefined} onClick={() => navigateMain(item.view)}><item.icon size={20} aria-hidden="true" /><span>{item.label}</span>{view === item.view && <i aria-hidden="true" />}</button>)}</MotionNav>
+        <div className="sidebar-note"><ShieldCheck size={21} aria-hidden="true" /><p>Cuidar do agora.<br /><strong>Planejar o amanhã.</strong></p></div>
+        <button type="button" className="sidebar-profile" aria-label="Abrir seu espaço pessoal" aria-current={view === "profile" ? "page" : undefined} onClick={() => setView("profile")}><ProfileAvatar profile={personalProfile.profile} /><div><strong>{personalProfile.profile.preferredName || "Seu espaço pessoal"}</strong><small>{demo ? "Perfil de demonstração" : "Ver meu perfil"}</small></div><ChevronRight size={15} aria-hidden="true" /></button>
+      </aside>
+      <MotionNav value={view} className="studio-mobile-tabs" label="Navegação principal">{nav.map(item => <button key={item.view} aria-current={view === item.view ? "page" : undefined} className={view === item.view ? "selected" : ""} onClick={() => navigateMain(item.view)}><item.icon size={20} aria-hidden="true" /><span>{item.label}</span></button>)}</MotionNav>
       <IslandHeader
         view={view}
         month={month}
-        onViewChange={setView}
+        onViewChange={navigateMain}
         onMonthChange={setMonth}
       />
       <main>
-        <div className="workspace">
+        <div className="workspace" ref={workspaceMotion}>
           <div className="utility-bar">
             <div className="mode-controls">
               <span className="mode-pill">
                 {demo ? "Demonstração" : loaded ? "Meu controle" : "Carregando"}
               </span>
-              <button className="text-button" onClick={() => chooseMode(!demo)}>
+              <button
+                className="text-button"
+                disabled={busy || savings.busy || personalProfile.busy}
+                onClick={() => chooseMode(!demo)}
+              >
                 {demo ? "Usar meus dados" : "Ver demonstração"}
               </button>
             </div>
             <div className="toolbar-actions">
+              <button type="button" className="profile-mobile-trigger" aria-label="Abrir seu espaço pessoal" aria-current={view === "profile" ? "page" : undefined} onClick={() => setView("profile")}><ProfileAvatar profile={personalProfile.profile} /><span>Meu perfil</span></button>
               <ExportStatement
                 transactions={allRows}
                 month={month}
@@ -627,7 +679,7 @@ export default function FinanceApp() {
                 onClick={openPlan}
                 disabled={busy || (!demo && !loaded)}
               >
-                <SlidersHorizontal size={16} /> Meta e limites
+                <SlidersHorizontal size={16} /> Limites de gasto
               </button>
             </div>
           </div>
@@ -641,10 +693,10 @@ export default function FinanceApp() {
           )}
           {notice && (
             <div className="notice" role="status">
-              {notice}
+              <Check size={18} aria-hidden="true" /><span>{notice}</span>
             </div>
           )}
-          {view !== "overview" && (
+          {view !== "overview" && view !== "profile" && (
             <div className="page-head">
               <div>
                 <span className="eyebrow">{monthTitle(month)}</span>
@@ -654,7 +706,14 @@ export default function FinanceApp() {
           )}
           {view === "overview" && (
             <>
-              <h1 className="sr-only">Meu mês — {monthTitle(month)}</h1>
+              <div className="dashboard-intro">
+                <div>
+                  <span className="eyebrow">Seu resumo financeiro</span>
+                  <h1>Meu mês<span>.</span></h1>
+                  <p>Tudo o que importa, em um só lugar.</p>
+                </div>
+                <button className="intro-add" onClick={() => { rememberDialogFocus(); setEditing(null); setDraft(blankDraft(month)); setFormError(""); setEntryOpen(true); }} disabled={busy || (!demo && !loaded)}><Plus size={18} aria-hidden="true" />Novo lançamento</button>
+              </div>
               <div
                 className="overview-grid"
                 key={month + (demo ? "demo" : "real")}
@@ -707,40 +766,11 @@ export default function FinanceApp() {
                     Entradas e saídas do mês, sem saldo bancário inicial.
                   </p>
                 </section>
-                <section className="goal-panel" aria-labelledby="goal-heading">
-                  <div className="section-head">
-                    <h2 id="goal-heading">Meta de sobra</h2>
-                    <button
-                      className="goal-edit"
-                      aria-label="Editar meta do mês"
-                      disabled={busy || (!demo && !loaded)}
-                      onClick={openPlan}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                  </div>
-                  <GoalRing progress={progress} />
-                  {settings.goal > 0 ? (
-                    <>
-                      <p className="goal-caption">
-                        de <strong>{money(settings.goal)}</strong> em sobra
-                      </p>
-                      <span className="goal-footnote">
-                        {progress >= 100
-                          ? "Meta do mês alcançada"
-                          : "Um passo de cada vez"}
-                      </span>
-                    </>
-                  ) : (
-                    <button
-                      className="text-button"
-                      onClick={openPlan}
-                      disabled={busy || (!demo && !loaded)}
-                    >
-                      Definir minha meta
-                    </button>
-                  )}
-                </section>
+                <SavingsOverview
+                  controller={savings}
+                  month={month}
+                  onOpen={() => setView("savings")}
+                />
                 <section
                   className="category-panel"
                   aria-labelledby="category-heading"
@@ -749,73 +779,15 @@ export default function FinanceApp() {
                     <h2 id="category-heading">Para onde foi</h2>
                     <span className="mini-label">DESPESAS PAGAS</span>
                   </div>
-                  <div className="category-map">
-                    {categoryTotals
-                      .filter((c) => c.paid > 0)
-                      .sort((a, b) => b.paid - a.paid)
-                      .map((c, index, paidCategories) => {
-                        const tile = (item: typeof c, large: boolean) => (
-                          <button
-                            className={
-                              "category-tile " + (large ? "category-main" : "")
-                            }
-                            key={item.name}
-                            style={
-                              {
-                                "--tile-color": item.color,
-                                flex: item.paid,
-                              } as CSSProperties
-                            }
-                            aria-label={
-                              item.name +
-                              ": " +
-                              money(item.paid) +
-                              ", " +
-                              Math.round((item.paid / summary.expense) * 100) +
-                              "% das despesas. Ver lançamentos."
-                            }
-                            onClick={() => {
-                              setView("transactions");
-                              setCategoryFilter(item.name);
-                              setTypeFilter("expense");
-                              setStatusFilter("paid");
-                              setQuery("");
-                            }}
-                          >
-                            <strong>{item.name}</strong>
-                            <span>{money(item.paid)}</span>
-                            <small>
-                              {Math.round((item.paid / summary.expense) * 100)}%
-                              das despesas
-                            </small>
-                          </button>
-                        );
-                        if (index === 0) return tile(c, true);
-                        if (index === 1)
-                          return (
-                            <div
-                              className="category-secondary"
-                              key="secondary"
-                              style={{
-                                flex: paidCategories
-                                  .slice(1)
-                                  .reduce((s, cat) => s + cat.paid, 0),
-                              }}
-                            >
-                              {paidCategories
-                                .slice(1)
-                                .map((item) => tile(item, false))}
-                            </div>
-                          );
-                        return null;
-                      })}
-                    {!summary.expense && (
-                      <div className="empty-state">
-                        <ReceiptText size={28} />
-                        <h3>Ainda sem despesas pagas</h3>
-                        <p>Seus gastos aparecerão aqui por categoria.</p>
-                      </div>
-                    )}
+                  <div className="spending-total"><span>Total pago no mês</span><strong>{money(summary.expense)}</strong></div>
+                  <div className="spending-bars">
+                    {categoryTotals.filter(c => c.paid > 0).sort((a,b) => b.paid-a.paid).map(c => (
+                      <button className="spending-row" key={c.name} onClick={() => {setView("transactions");setCategoryFilter(c.name);setTypeFilter("expense");setStatusFilter("paid");setQuery("");}} aria-label={c.name + ": " + money(c.paid) + ". Ver lançamentos"}>
+                        <span className="spending-label"><span><i style={{background:c.color}} aria-hidden="true" />{c.name}</span><strong>{money(c.paid)}<small>{Math.round(c.paid/summary.expense*100)}%</small></strong></span>
+                        <span className="spending-track" aria-hidden="true"><span style={{width:(c.paid/summary.expense*100)+"%",background:c.color}} /></span>
+                      </button>
+                    ))}
+                    {!summary.expense && <div className="empty-state"><ReceiptText size={28} /><h3>Ainda sem despesas pagas</h3><p>Seus gastos aparecerão aqui por categoria.</p></div>}
                   </div>
                   <p className="context-note">
                     Toque em uma categoria para ver os gastos.
@@ -936,6 +908,14 @@ export default function FinanceApp() {
                 )}
               </section>
             </>
+          )}
+          {view === "profile" && <ProfilePage key={(demo ? "demo" : "personal") + (initialProfileEditing ? "edit" : "view")} controller={personalProfile} initialEditing={initialProfileEditing} />}
+          {view === "savings" && (
+            <SavingsPage
+              key={demo ? "demo" : "personal"}
+              controller={savings}
+              month={month}
+            />
           )}
           {view === "transactions" && (
             <section className="list-panel">
@@ -1282,18 +1262,20 @@ export default function FinanceApp() {
           <SiteFooter demo={demo} monthLabel={monthTitle(month)} />
         </div>
       </main>
-      <div className="floating-entry">
-        <button
-          className="floating-button"
-          disabled={busy || (!demo && !loaded)}
-          onClick={() => openEntry()}
-          aria-keyshortcuts="Control+k Meta+k"
-        >
-          <Plus size={20} />
-          <span>Novo lançamento</span>
-          <kbd className="shortcut">Ctrl K</kbd>
-        </button>
-      </div>
+      {view !== "savings" && view !== "profile" && (
+        <div className="floating-entry">
+          <button
+            className="floating-button"
+            disabled={busy || (!demo && !loaded)}
+            onClick={() => openEntry()}
+            aria-keyshortcuts="Control+k Meta+k"
+          >
+            <Plus size={20} />
+            <span>Novo lançamento</span>
+            <kbd className="shortcut">Ctrl K</kbd>
+          </button>
+        </div>
+      )}
       <Dialog
         open={entryOpen}
         onOpenChange={(open) => {
@@ -1503,21 +1485,12 @@ export default function FinanceApp() {
           className="finance-dialog"
           onCloseAutoFocus={restoreDialogFocus}
         >
-          <DialogTitle>Meta e limites de {monthTitle(month)}</DialogTitle>
+          <DialogTitle>Limites de gasto de {monthTitle(month)}</DialogTitle>
           <DialogDescription>
-            Escolha quanto quer que sobre e um teto para cada categoria neste
-            mês.
+            Defina um teto para cada categoria neste mês. Suas metas de dinheiro
+            guardado ficam na página Cofrinhos.
           </DialogDescription>
           <form className="finance-form" onSubmit={savePlan}>
-            <label>
-              Meta de sobra no mês (R$)
-              <input
-                autoFocus
-                inputMode="decimal"
-                value={goalDraft}
-                onChange={(e) => setGoalDraft(e.target.value)}
-              />
-            </label>
             <h3>Limites de gastos</h3>
             <p className="form-note">Deixe zero para não definir um limite.</p>
             <div className="budget-fields">
@@ -1549,7 +1522,7 @@ export default function FinanceApp() {
                 Cancelar
               </button>
               <button className="primary-button" disabled={busy}>
-                {busy ? "Salvando…" : "Salvar meta e limites"}
+                {busy ? "Salvando…" : "Salvar limites"}
               </button>
             </div>
           </form>
@@ -1641,46 +1614,6 @@ function AnimatedNumber({
   );
 }
 
-function GoalRing({ progress }: { progress: number }) {
-  return (
-    <div
-      className="goal-ring"
-      role="progressbar"
-      aria-label="Sobra do mês em relação à meta"
-      aria-valuenow={Math.round(progress)}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      style={{ "--ring-progress": progress } as CSSProperties}
-    >
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle
-          className="ring-track"
-          cx="60"
-          cy="60"
-          r="52"
-          fill="none"
-          strokeWidth="9"
-        />
-        <circle
-          className="ring-progress"
-          cx="60"
-          cy="60"
-          r="52"
-          fill="none"
-          strokeWidth="9"
-          pathLength="100"
-          strokeDasharray="100"
-          strokeDashoffset={100 - progress}
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="ring-value">
-        <AnimatedNumber value={progress} percentage />
-      </div>
-    </div>
-  );
-}
-
 function BalanceSparkline({ rows }: { rows: Transaction[] }) {
   const groups = Array.from({ length: 5 }, (_, week) =>
     totals(
@@ -1734,6 +1667,7 @@ function BalanceSparkline({ rows }: { rows: Transaction[] }) {
         />
         <path
           className="sparkline-actual"
+          pathLength={1}
           d={actualPath}
           fill="none"
           stroke="currentColor"
@@ -1857,7 +1791,7 @@ function IslandHeader({
     >
       <Link
         className="brand"
-        href="/"
+        href="/app"
         aria-label="Zelo, início"
         onClick={() => onViewChange("overview")}
       >

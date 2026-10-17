@@ -1,7 +1,2 @@
-import FinanceApp from './finance-full';
-import { requireChatGPTUser } from './chatgpt-auth';
-export const dynamic = 'force-dynamic';
-export default async function Page() {
-  await requireChatGPTUser('/');
-  return <FinanceApp />;
-}
+import Welcome from "./welcome";
+export default function Page() { return <Welcome />; }

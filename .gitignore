@@ -67,3 +67,6 @@ next-env.d.ts
 /extratos/
 /zelo-extrato-*.csv
 /zelo-extrato-*.xlsx
+
+# Local design review artifacts
+/.taste-skill/

@@ -1,3 +1,4 @@
+import { PERSONAL_ACCOUNTS_ENABLED, personalAccessUnavailable } from "@/lib/app-access";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { database } from "@/db/raw";
 import {
@@ -38,6 +39,7 @@ function sameOrigin(request: Request) {
   return !origin || origin === new URL(request.url).origin;
 }
 export async function GET() {
+  if (!PERSONAL_ACCOUNTS_ENABLED) return personalAccessUnavailable();
   const user = await getChatGPTUser();
   if (!user)
     return Response.json(
@@ -73,6 +75,7 @@ export async function GET() {
   }
 }
 export async function POST(request: Request) {
+  if (!PERSONAL_ACCOUNTS_ENABLED) return personalAccessUnavailable();
   const user = await getChatGPTUser();
   if (!user)
     return Response.json({ error: "Entre para salvar." }, { status: 401 });
@@ -114,6 +117,7 @@ export async function POST(request: Request) {
   }
 }
 export async function PATCH(request: Request) {
+  if (!PERSONAL_ACCOUNTS_ENABLED) return personalAccessUnavailable();
   const user = await getChatGPTUser();
   if (!user)
     return Response.json({ error: "Entre para salvar." }, { status: 401 });
@@ -188,6 +192,7 @@ export async function PATCH(request: Request) {
   }
 }
 export async function DELETE(request: Request) {
+  if (!PERSONAL_ACCOUNTS_ENABLED) return personalAccessUnavailable();
   const user = await getChatGPTUser();
   if (!user)
     return Response.json({ error: "Entre para excluir." }, { status: 401 });
@@ -216,6 +221,7 @@ export async function DELETE(request: Request) {
   }
 }
 export async function PUT(request: Request) {
+  if (!PERSONAL_ACCOUNTS_ENABLED) return personalAccessUnavailable();
   const user = await getChatGPTUser();
   if (!user)
     return Response.json({ error: "Entre para salvar." }, { status: 401 });
