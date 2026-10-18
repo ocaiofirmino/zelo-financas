@@ -4,6 +4,37 @@ O Zelo ajuda a organizar receitas e despesas, entender para onde o dinheiro est�
 
 O nome do sistema é **Zelo**, mas a pasta do projeto pode continuar como `folga-financas`.
 
+## Andamento do projeto — 18/10/2026
+
+O Zelo está evoluindo de um MVP de controle financeiro para uma experiência completa de organização pessoal: entender o mês, acompanhar compromissos e guardar para planos.
+
+| Branch | O que representa |
+| --- | --- |
+| [`main`](https://github.com/ocaiofirmino/zelo-financas/tree/main) | Base do MVP financeiro. Nesta atualização, recebe somente documentação; o novo design ainda não foi incorporado aqui. |
+| [`newdesign`](https://github.com/ocaiofirmino/zelo-financas/tree/newdesign) | Frontend em desenvolvimento: nova página inicial, painel refinado, cofrinhos, perfil e painéis animados de login/cadastro. Uso atual em demonstração com dados fictícios. |
+
+### O que já avançou
+
+- **Base financeira do MVP:** lançamentos de receitas/despesas, edição/exclusão, categorias, parcelas, resultado realizado e previsto, meta de sobra e limites.
+- **Relatórios:** demonstrativo e exportação de extratos em Excel, CSV e formato importável no Power BI.
+- **Novo frontend na `newdesign`:** página inicial responsiva, paleta verde preservada, animações com preferência por movimento reduzido, prévias reais e simulador de aportes mensais.
+- **Acesso visual na `newdesign`:** login e cadastro no mesmo painel lateral, alternância de formulários, confirmação de senha e versão de tela inteira no celular. Os endereços `/login` e `/cadastro` abrem os novos painéis; a interface antiga foi substituída.
+- **Cofrinhos e perfil na `newdesign`:** interfaces e regras de metas, depósitos/retiradas, acompanhamento e edição de dados de perfil.
+
+### O que ainda precisa ser implementado ou integrado
+
+1. **Cadastro e login reais:** criação de contas, autenticação, sessões, saída, confirmação de e-mail e recuperação de acesso.
+2. **Integração com o banco:** conectar o novo fluxo de acesso aos registros persistentes de cada usuário, aplicar/revisar migrações e validar o ciclo de gravação e leitura.
+3. **Uso pessoal completo:** integrar os formulários de acesso, perfil, lançamentos e cofrinhos à identidade verificada; testar o isolamento entre contas e só então liberar o controle pessoal.
+4. **Preparação para produção:** testes de ponta a ponta com autenticação e banco reais, tratamento de falhas, configuração do ambiente e rotina de backup/restauração.
+5. **Evoluções de produto:** dicas de economia, análises adicionais e dashboards no Power BI, após a integração do fluxo principal.
+
+**Atenção ao escopo:** a `newdesign` é uma prévia visual interativa, e não uma versão com contas prontas para uso. Seus formulários não autenticam, não criam usuários e não enviam dados de cadastro. O controle pessoal está bloqueado por `PERSONAL_ACCOUNTS_ENABLED = false`; as operações de demonstração usam dados fictícios.
+
+O banco não está sendo iniciado do zero: já existem esquema, migrações e código de API para SQLite/Cloudflare D1. O que falta é implementar a gestão de contas e integrar/validar essa base com a experiência nova. A persistência descrita abaixo pertence à base do MVP e não significa que o cadastro da `newdesign` já funcione.
+
+As imagens e o vídeo abaixo documentam a versão anterior do MVP; o trabalho visual atual está na branch `newdesign`.
+
 ## Versão inicial
 
 **v0.1.0 — MVP de controle financeiro pessoal.** Esta primeira versão reúne dashboard, lançamentos, parcelas, metas, demonstrativo e exportação de extratos. O uso local já possui armazenamento persistente; cadastro, login próprio e acesso público para outros usuários estão nas próximas etapas.
@@ -209,7 +240,7 @@ A prévia local usa um usuário fixo de teste. As consultas da API são vinculad
 
 A identidade da API atual vem dos cabeçalhos de autenticação do ambiente Sites. Fora desse ambiente, esses cabeçalhos só podem ser aceitos atrás de um gateway confiável que remova os enviados pelo cliente e insira a identidade verificada. Antes de hospedar o Worker diretamente na internet, é necessário implementar autenticação própria ou essa proteção de acesso.
 
-A interface separada **zelo-login**, feita em HTML, CSS e JavaScript, é um protótipo visual com troca animada entre login e cadastro. Ela não cria contas nem autentica usuários no dashboard.
+O novo fluxo visual de acesso está na branch [`newdesign`](https://github.com/ocaiofirmino/zelo-financas/tree/newdesign): login e cadastro em painéis laterais na página inicial. Ele substitui a interface antiga nessa branch, mas ainda não cria contas nem autentica usuários. A `main` não incorpora esse frontend nesta atualização.
 
 ## 🛠️ Tecnologias
 
