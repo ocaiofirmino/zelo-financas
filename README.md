@@ -4,9 +4,9 @@ Organize receitas e despesas, entenda seu mês e dê espaço aos seus planos.
 
 ## Estado desta branch
 
-**`newdesign` — frontend em desenvolvimento, com demonstração interativa e dados fictícios.**
+**`newdesign` — demonstração somente leitura, com dados fictícios. Login e cadastro em manutenção.**
 
-Esta atualização entrega o novo design. **Login, criação de contas, sessões e integração do fluxo com o banco de dados ainda serão implementados/integrados.** Os formulários atuais são visuais: não enviam informações, não autenticam e não criam usuários. O controle pessoal permanece desabilitado.
+Esta atualização entrega o novo design. **Login, criação de contas, sessões e integração do fluxo com o banco de dados ainda serão implementados/integrados.** Os acessos de login e cadastro exibem avisos de manutenção, sem campos ou coleta de dados. O controle pessoal permanece desabilitado.
 
 A base financeira e o histórico do MVP estão na [`main`](https://github.com/ocaiofirmino/zelo-financas/tree/main). Esta branch já contém esquema, migrações e código de API para SQLite/Cloudflare D1; isso não equivale a um cadastro integrado e pronto para uso.
 
@@ -16,14 +16,15 @@ A base financeira e o histórico do MVP estão na [`main`](https://github.com/oc
 - Apresentação de Meu mês, Cofrinhos, Cartões e Extrato com capturas reais do produto e valores fictícios.
 - Simulador de aportes mensais com gráfico SVG e projeção em 12 meses, sem rendimentos.
 - Refinamento visual do painel financeiro, tabelas e navegação.
-- Login e cadastro em um painel lateral animado; no celular, a interface ocupa a tela inteira e permite rolagem.
-- Troca entre os formulários preservando os valores digitados, campos obrigatórios e validação de confirmação de senha. As senhas são limpas ao fechar o painel.
+- Avisos de login e cadastro em manutenção em um painel lateral animado; no celular, ocupam a tela inteira.
+- Navegação pública somente leitura: não é possível criar, editar, excluir ou marcar lançamentos; alterar limites; registrar aportes/retiradas; ou editar o perfil. Essas funções ficam reservadas às futuras contas autenticadas.
+- Filtros, consulta de meses, detalhes dos cofrinhos e exportação dos exemplos continuam disponíveis.
 - Os acessos diretos `/login` e `/cadastro` exibem a página inicial com o painel correspondente. A interface antiga não é mais renderizada.
 - FAQ sobre funcionalidades e limitações da demonstração.
 
 ## O que já existe além do design
 
-O projeto inclui regras financeiras em centavos, parcelas, categorias, metas/limites e exportação de extratos em Excel/CSV/CSV para Power BI. Há também interfaces e regras de cofrinhos e perfil. Na demonstração, isso pode ser explorado com dados fictícios; alterações não representam movimentação de dinheiro nem persistência em uma conta pessoal.
+O projeto inclui regras financeiras em centavos, parcelas, categorias, metas/limites e exportação de extratos em Excel/CSV/CSV para Power BI. Há também interfaces e regras de cofrinhos e perfil. Na demonstração, os exemplos podem ser consultados, mas não alterados. Não há movimentação de dinheiro nem persistência em uma conta pessoal.
 
 A flag `PERSONAL_ACCOUNTS_ENABLED` está em `false`. As APIs pessoais de finanças, cofrinhos e perfil permanecem bloqueadas antes de acessar autenticação e banco.
 
@@ -56,7 +57,7 @@ O comando verifica TypeScript e compila a demonstração. A execução do aplica
 
 ## Verificações
 
-Nesta atualização passaram a compilação da demo com TypeScript, ESLint dos componentes alterados e as verificações de finanças, exportação, cofrinhos, perfil e bloqueio de acesso pessoal. Os fluxos visuais de login/cadastro, validação de senhas, troca de formulários, fechamento e rolagem mobile foram conferidos no Chromium. Isso não valida autenticação ou persistência reais, que não foram integradas.
+Nesta atualização passaram a compilação da demo com TypeScript, ESLint dos componentes alterados e as verificações de finanças, exportação, cofrinhos, perfil e bloqueio de acesso pessoal. Os avisos de manutenção, o fechamento do painel e os bloqueios de criação/edição na demonstração são conferidos no Chromium. Isso não valida autenticação ou persistência reais, que não foram integradas.
 
 Os testes de regras podem ser executados na raiz, com as dependências instaladas:
 
@@ -73,7 +74,7 @@ npm run test:access
 | Arquivo | Função |
 | --- | --- |
 | `app/landing.tsx` e `app/landing.css` | Página inicial, prévias, simulação e navegação. |
-| `app/login-drawer.tsx` e `app/login-drawer.css` | Painéis de login/cadastro e validações visuais. |
+| `app/login-drawer.tsx` e `app/login-drawer.css` | Avisos de login/cadastro em manutenção, sem formulários. |
 | `app/welcome.tsx` | Entrada compartilhada; endereços de acesso usam os novos painéis. |
 | `app/finance-full.tsx` | Interface e navegação do painel financeiro. |
 | `app/local-polish.css` | Refinamento visual do painel. |

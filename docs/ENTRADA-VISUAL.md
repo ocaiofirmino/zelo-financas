@@ -1,17 +1,22 @@
-# Entrada visual do Zelo
+# Demonstração pública do Zelo
 
-Rotas: `/` apresentação, `/login` entrada, `/cadastro` cadastro, `/demo` demonstração pública e `/app` controle autenticado.
+A `newdesign` apresenta o frontend em modo **somente leitura**, com dados fictícios. A página inicial mantém a paleta original, o simulador de aportes e a apresentação dos recursos.
 
-Esta etapa implementa a prévia visual dos formulários. Nenhum e-mail ou senha é enviado ou armazenado. O acesso existente continua em `/signin-with-chatgpt?return_to=%2Fapp`. A autenticação por e-mail será uma etapa separada.
+## Acesso e manutenção
 
-Direção: split stage, mantendo Manrope e a paleta original. O mês e os cofrinhos reais da demonstração são a imagem do produto. Quatro capturas locais mostram mês, cofrinhos, cartão e extrato. Sem pessoas, estatísticas ou depoimentos inventados.
+- `/login` e `/cadastro` abrem a página inicial com um painel lateral indicando **Em manutenção**.
+- Não são exibidos campos de nome, telefone, e-mail ou senha. Nenhuma conta é criada ou autenticada.
+- O botão principal da página inicial leva à demonstração. O acesso pessoal no painel também informa a manutenção.
+- O painel fecha por X, Esc ou clique fora; no celular, ocupa a tela inteira. As animações respeitam movimento reduzido.
 
-Movimento: entrada coreografada, produto com deslocamento leve, troca gradual entre capturas e transições dos formulários. Há pausa visível, pausa em aba oculta e respeito a prefers-reduced-motion. As imagens são dados fictícios.
+## O que pode ser explorado
 
-Ajustes da direção: no celular, título e ação vêm antes da apresentação para que entrar e cadastrar não fiquem abaixo de um painel alto. O inspetor agrupa o carrossel como um único fragmento; a exceção few-pictures é intencional: há quatro capturas reais selecionáveis em um mesmo painel, sem adicionar imagens alheias ao produto. As bordas pertencem aos controles, campos e camadas da prévia. A ausência de vídeo evita duplicar a demonstração interativa; a imagem em movimento é o próprio carrossel.
+`/demo` e `/app` exibem exemplos de finanças pessoais, lançamentos, cartões, cofrinhos, demonstrativo e perfil. Filtros, troca do mês, consulta de detalhes e exportação de exemplos estão disponíveis. `/demo?view=savings`, por exemplo, abre diretamente os cofrinhos tanto na demo estática quanto no aplicativo completo.
 
-## Etapa atual: apenas demonstração
+Não é permitido criar, editar, excluir ou mudar a situação de lançamentos; alterar limites; criar/editar/arquivar cofrinhos; registrar/remover aportes ou retiradas; ou editar dados/foto do perfil. A rota direta de edição de perfil também abre somente a consulta. Ctrl/Cmd+K não abre o formulário de lançamento.
 
-Por decisão do projeto, o cadastro e o login serão integrados ao backend em uma próxima etapa. `lib/app-access.ts` mantém o controle pessoal desabilitado. `/app`, perfil e edição abrem com dados fictícios; preferências antigas de modo pessoal são ignoradas. “Usar meus dados” leva ao cadastro. Não há entrada pelo ChatGPT na interface. Os formulários não enviam nem guardam credenciais.
+Os bloqueios ficam na interface e nos controladores de alterações. `lib/app-access.ts` mantém `PERSONAL_ACCOUNTS_ENABLED = false`; as APIs pessoais respondem 503 antes de acessar autenticação ou banco.
 
-As APIs financeiras, de cofrinhos e de perfil respondem 503 antes de acessar autenticação ou banco enquanto a liberação estiver desabilitada. Isso também bloqueia sessões locais antigas. A liberação deve acontecer somente após implementar o cadastro, autenticação e sessões próprias do Zelo.
+## Próxima etapa
+
+Implementar e integrar cadastro, login e sessões à identidade do usuário e à persistência. Só depois liberar a criação e a edição de registros próprios para contas autenticadas.

@@ -15,12 +15,12 @@ const resources = [
   { name: "Extrato", file: "extrato", title: "Cada detalhe conta.", copy: "Veja para onde o dinheiro foi, filtre seus lançamentos e exporte o extrato em Excel ou CSV.", view: "statement" },
 ];
 const questions = [
-  ["O que é o Zelo?", "É um organizador de finanças pessoais para acompanhar receitas, despesas, cartões e metas de economia em um só lugar."],
+  ["O que é o Zelo?", "É um organizador de finanças pessoais para acompanhar receitas, despesas, cartões e metas de economia em um só lugar. No momento, você pode explorar a versão demonstrativa, somente leitura."],
   ["Posso experimentar antes de criar uma conta?", "Sim. A demonstração permite explorar o painel com dados fictícios, sem cadastro. Você pode conhecer os lançamentos, os cartões e os cofrinhos."],
   ["O Zelo movimenta meu dinheiro?", "Não. O Zelo é uma ferramenta de organização. Os registros e cofrinhos ajudam a acompanhar seu dinheiro; não são contas bancárias ou investimentos."],
   ["Consigo acompanhar compras parceladas?", "Sim. A área de cartões mostra as parcelas e os compromissos dos próximos meses para ajudar no planejamento."],
-  ["Posso baixar meus lançamentos?", "Sim. No extrato, você pode exportar seus registros em Excel ou CSV."],
-  ["O cadastro já está disponível?", "A integração de cadastro e login ainda está em preparação. Por enquanto, use a demonstração com dados fictícios; os formulários não criam contas nem enviam suas informações."],
+  ["Posso baixar meus lançamentos?", "Sim. Na demonstração, você pode exportar os exemplos fictícios em Excel ou CSV. Seus próprios registros serão liberados após a integração do acesso pessoal."],
+  ["O cadastro já está disponível?", "Login e cadastro estão em manutenção e ainda não estão disponíveis. A demonstração é somente leitura, com dados fictícios. Criar e alterar registros será exclusivo de contas autenticadas."],
 ];
 const money = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
@@ -48,7 +48,7 @@ export default function Landing({ initialAuth }: { initialAuth?: "login" | "sign
       <nav aria-label="Navegação principal" className={menu ? "is-open" : ""}>
         <a href="#conheca" onClick={() => setMenu(false)}>Conheça o Zelo</a><a href="#planos" onClick={() => setMenu(false)}>Seus planos</a><a href="#duvidas" onClick={() => setMenu(false)}>Dúvidas</a><button className="z-mobile-login" aria-haspopup="dialog" onClick={() => { setMenu(false); setAuthMode("login"); setLoginOpen(true); }}>Entrar na minha conta <ArrowUpRight size={16} /></button>
       </nav>
-      <div className="z-nav-actions"><a href="/login" aria-haspopup="dialog" onClick={event => { if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); setMenu(false); setAuthMode("login"); setLoginOpen(true); }}>Entrar <ArrowUpRight size={16} /></a><a className="z-button" href="/cadastro" aria-haspopup="dialog" onClick={event => { if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); setMenu(false); setAuthMode("signup"); setLoginOpen(true); }}>Criar conta <ArrowUpRight size={17} /></a></div>
+      <div className="z-nav-actions"><a href="/login" aria-haspopup="dialog" onClick={event => { if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); setMenu(false); setAuthMode("login"); setLoginOpen(true); }}>Entrar <ArrowUpRight size={16} /></a><a className="z-button" href="/demo">Ver demonstração <ArrowUpRight size={17} /></a></div>
       <button className="z-menu" onClick={() => setMenu(!menu)} aria-label={menu ? "Fechar menu" : "Abrir menu"} aria-expanded={menu}>{menu ? <X /> : <Menu />}</button>
     </header>
 

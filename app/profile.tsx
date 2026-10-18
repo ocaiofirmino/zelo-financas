@@ -12,7 +12,7 @@ async function profileApi(method: "GET" | "PUT", profile?: Profile) {
   if (!response.ok) throw new Error(data.error || "Não foi possível acessar seu perfil.");
   return data as { profile:Profile; accountEmail:string };
 }
-export function useProfile(demo:boolean) {
+export function useProfile(demo:boolean,readOnly=false) {
   const [example,setExample] = useState<Profile>(()=>({...demoProfile,paydays:[...demoProfile.paydays]}));
   const [personal,setPersonal] = useState<Profile>(emptyProfile);
   const [accountEmail,setAccountEmail] = useState("");
@@ -33,13 +33,14 @@ export function useProfile(demo:boolean) {
     return()=>{active=false;invalidateRequests();};
   },[demo,reload,invalidateRequests]);
   async function save(value:Profile) {
+    if(readOnly)throw new Error("Demonstração somente leitura. O acesso pessoal está em manutenção.");
     if(lock.current)throw new Error("Aguarde o perfil terminar de salvar.");
     if(!demo && (!loaded || error))throw new Error("Carregue seu perfil antes de editar.");
     const valid=validateProfile(value);lock.current=true;setBusy(true);
     try {if(demo)setExample(valid);else{const result=await profileApi("PUT",valid);request.current++;setPersonal(result.profile);setAccountEmail(result.accountEmail);} }
     finally{lock.current=false;setBusy(false);}
   }
-  return {profile:demo ? example : personal,accountEmail:demo ? "Demonstração" : accountEmail,loaded:demo || loaded,error:demo ? "" : error,busy,demo,reload,save};
+  return {profile:demo ? example : personal,accountEmail:demo ? "Demonstração" : accountEmail,loaded:demo || loaded,error:demo ? "" : error,busy,demo,readOnly,reload,save};
 }
 type Controller=ReturnType<typeof useProfile>;
 export function ProfileAvatar({profile,size="small"}:{profile:Profile;size?:"small"|"large"}) {
@@ -55,7 +56,7 @@ const dateLabel=(value:string)=>new Intl.DateTimeFormat("pt-BR",{day:"2-digit",m
 export function ProfilePage({controller,initialEditing=false}:{controller:Controller;initialEditing?:boolean}) {
   const router=useRouter();
   const {profile,loaded,error,busy,demo}=controller;
-  const [editing,setEditing]=useState(initialEditing);
+  const [editing,setEditing]=useState(initialEditing && !controller.readOnly);
   const [draft,setDraft]=useState<Profile>(profile);
   const [salary,setSalary]=useState(profile.monthlySalary===null ? "" : (profile.monthlySalary/100).toFixed(2).replace(".",","));
   const [day,setDay]=useState("");
@@ -69,6 +70,7 @@ export function ProfilePage({controller,initialEditing=false}:{controller:Contro
     if(loaded && initializedMode.current!==demo){initializedMode.current=demo;setDraft({...profile,paydays:[...profile.paydays]});setSalary(profile.monthlySalary===null?"":(profile.monthlySalary/100).toFixed(2).replace(".",","));}
   },[profile,loaded,demo]);
   function openEditor(){
+    if(controller.readOnly)return;
     setDraft({...profile,paydays:[...profile.paydays]});setSalary(profile.monthlySalary===null?"":(profile.monthlySalary/100).toFixed(2).replace(".",","));setFormError("");setNotice("");
     if(!demo){router.push("/app/perfil/editar");return;}
     setEditing(true);requestAnimationFrame(()=>formHeading.current?.focus());
@@ -93,7 +95,7 @@ export function ProfilePage({controller,initialEditing=false}:{controller:Contro
   const dates=nextPaydays(profile.paydays,localDate());
   if(!loaded)return <section className="profile-state" role={error?"alert":"status"}><CircleUserRound size={32} aria-hidden="true" /><h1>Seu perfil</h1><p>{error||"Carregando seu espaço pessoal…"}</p>{error&&<button className="secondary-button" onClick={()=>void controller.reload()}>Tentar novamente</button>}</section>;
   return <div className="profile-page">
-    <div className="profile-page-heading"><div><span className="eyebrow">Seu espaço pessoal</span><h1 ref={formHeading} tabIndex={-1}>{editing?"Do seu jeito.":"Meu perfil."}</h1><p>{editing?"Atualize suas informações e os dias em que recebe.":"Suas informações, sua rotina e os próximos planos."}</p></div>{!editing&&<button className="primary-button" onClick={openEditor}><Pencil size={16} aria-hidden="true" />Editar meus dados</button>}</div>
+    <div className="profile-page-heading"><div><span className="eyebrow">Seu espaço pessoal</span><h1 ref={formHeading} tabIndex={-1}>{editing?"Do seu jeito.":"Meu perfil."}</h1><p>{editing?"Atualize suas informações e os dias em que recebe.":"Suas informações, sua rotina e os próximos planos."}</p></div>{!editing&&<button hidden={controller.readOnly} data-personal-action className="primary-button" onClick={openEditor}><Pencil size={16} aria-hidden="true" />Editar meus dados</button>}</div>
     {notice&&<p className="notice" role="status"><Check size={18} aria-hidden="true" /><span>{notice}</span></p>}
     {editing ? <form className="profile-edit-form" onSubmit={save}>
       <div className="profile-editor-layout"><div className="profile-fields">
@@ -116,8 +118,8 @@ export function ProfilePage({controller,initialEditing=false}:{controller:Contro
       <section className="profile-hero"><ProfileAvatar profile={profile} size="large" /><div><span>{demo?"Perfil de demonstração":"Esse espaço é seu"}</span><h2>{profile.preferredName||"Seu perfil"}</h2><p>{profile.occupation ? profile.occupation+(profile.company?" na "+profile.company:"") : "Conte um pouco mais sobre você."}</p></div><span className="profile-private"><ShieldCheck size={15} aria-hidden="true" />Pessoal</span></section>
       <div className="profile-details-grid"><section className="profile-section"><div className="profile-section-heading"><CircleUserRound size={21} aria-hidden="true" /><h2>Informações pessoais</h2></div><dl><div><dt>Nome completo</dt><dd>{shown(profile.fullName)}</dd></div><div><dt><Mail size={14} aria-hidden="true" />E-mail de contato</dt><dd>{shown(profile.email)}</dd></div><div><dt><Phone size={14} aria-hidden="true" />Telefone</dt><dd>{shown(profile.phone)}</dd></div></dl></section>
       <section className="profile-section"><div className="profile-section-heading"><BriefcaseBusiness size={21} aria-hidden="true" /><h2>Trabalho e renda</h2></div><dl><div><dt>Cargo ou profissão</dt><dd>{shown(profile.occupation)}</dd></div><div><dt>Empresa</dt><dd>{shown(profile.company)}</dd></div><div><dt><Wallet size={14} aria-hidden="true" />Salário mensal</dt><dd className="profile-salary">{profile.monthlySalary===null?"Não informado":money(profile.monthlySalary)}</dd></div></dl></section>
-      <section className="profile-section profile-pay-summary"><div className="profile-section-heading"><CalendarDays size={21} aria-hidden="true" /><div><h2>Seus recebimentos</h2><p>{profile.paydays.length===2?"Duas datas no mês, no seu ritmo.":"Sua rotina de pagamento."}</p></div></div><div className="profile-calendar-days">{profile.paydays.map(value=><div key={value}><span>Todo mês</span><strong>{String(value).padStart(2,"0")}</strong><small>dia de pagamento</small></div>)}</div>{dates.length?<div className="profile-next-dates"><span>Próximas datas</span>{dates.map(date=><span key={date}><CalendarDays size={14} aria-hidden="true" />{dateLabel(date)}</span>)}</div>:<p className="profile-help">Você ainda não definiu seus dias de pagamento.</p>}<button className="text-button" onClick={openEditor}>Ajustar meus dias<ArrowRight size={15} aria-hidden="true" /></button><p className="profile-help">As datas organizam sua rotina. O salário não é lançado automaticamente como receita.</p></section>
-      <section className="profile-section profile-account"><div className="profile-section-heading"><ShieldCheck size={21} aria-hidden="true" /><h2>Sua conta no Zelo</h2></div><p>{demo?"Conheça o perfil com dados fictícios. O controle pessoal será liberado após a integração do cadastro e login.":"Seu acesso continua vinculado à conta ChatGPT. As informações de contato podem ser editadas no seu perfil."}</p>{!demo&&<span>{controller.accountEmail}</span>}<button className="secondary-button" onClick={openEditor}>Alterar meus dados<ChevronRight size={16} aria-hidden="true" /></button></section></div>
+      <section className="profile-section profile-pay-summary"><div className="profile-section-heading"><CalendarDays size={21} aria-hidden="true" /><div><h2>Seus recebimentos</h2><p>{profile.paydays.length===2?"Duas datas no mês, no seu ritmo.":"Sua rotina de pagamento."}</p></div></div><div className="profile-calendar-days">{profile.paydays.map(value=><div key={value}><span>Todo mês</span><strong>{String(value).padStart(2,"0")}</strong><small>dia de pagamento</small></div>)}</div>{dates.length?<div className="profile-next-dates"><span>Próximas datas</span>{dates.map(date=><span key={date}><CalendarDays size={14} aria-hidden="true" />{dateLabel(date)}</span>)}</div>:<p className="profile-help">Você ainda não definiu seus dias de pagamento.</p>}<button hidden={controller.readOnly} data-personal-action className="text-button" onClick={openEditor}>Ajustar meus dias<ArrowRight size={15} aria-hidden="true" /></button><p className="profile-help">As datas organizam sua rotina. O salário não é lançado automaticamente como receita.</p></section>
+      <section className="profile-section profile-account"><div className="profile-section-heading"><ShieldCheck size={21} aria-hidden="true" /><h2>Sua conta no Zelo</h2></div><p>{demo?"Conheça o perfil com dados fictícios. O controle pessoal será liberado após a integração do cadastro e login.":"Seu acesso continua vinculado à conta ChatGPT. As informações de contato podem ser editadas no seu perfil."}</p>{!demo&&<span>{controller.accountEmail}</span>}<button hidden={controller.readOnly} data-personal-action className="secondary-button" onClick={openEditor}>Alterar meus dados<ChevronRight size={16} aria-hidden="true" /></button></section></div>
     </>}
   </div>;
 }

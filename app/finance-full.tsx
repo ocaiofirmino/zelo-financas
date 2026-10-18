@@ -172,8 +172,8 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
     [deleteEntry, setDeleteEntry] = useState<Transaction | null>(null),
     [planOpen, setPlanOpen] = useState(false),
     [budgetDraft, setBudgetDraft] = useState<Record<string, string>>({});
-  const savings = useSavings(demo);
-  const personalProfile = useProfile(demo);
+  const savings = useSavings(demo, previewOnly);
+  const personalProfile = useProfile(demo, previewOnly);
   const workspaceMotion = useMotionDirector(view + ":" + month + ":" + demo);
   function navigateMain(next: View) {
     if (initialView === "profile") { router.push("/app?view=" + next); return; }
@@ -234,6 +234,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         if (
+          previewOnly ||
           busy ||
           entryOpen ||
           exportOpen ||
@@ -253,6 +254,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [
+    previewOnly,
     busy,
     entryOpen,
     exportOpen,
@@ -278,11 +280,12 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
     );
   }
   function setData(next: Transaction[]) {
+    if (previewOnly) return;
     if (demo) setExampleRows(next);
     else setSavedRows(next);
   }
   function openEntry(row?: Transaction) {
-    if (busy || (!demo && !loaded)) return;
+    if (previewOnly || busy || (!demo && !loaded)) return;
     rememberDialogFocus();
     setEditing(row || null);
     setDraft(
@@ -298,7 +301,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
     setEntryOpen(true);
   }
   function openPlan() {
-    if (busy || (!demo && !loaded)) return;
+    if (previewOnly || busy || (!demo && !loaded)) return;
     rememberDialogFocus();
     setBudgetDraft(
       Object.fromEntries(
@@ -313,7 +316,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
   }
   async function saveEntry(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (previewOnly || busy) return;
     setFormError("");
     setBusy(true);
     try {
@@ -355,7 +358,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
     }
   }
   async function toggleStatus(row: Transaction, animate = false) {
-    if (busy || (!demo && !loaded)) return;
+    if (previewOnly || busy || (!demo && !loaded)) return;
     setBusy(true);
     try {
       const status: Transaction["status"] =
@@ -385,7 +388,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
     }
   }
   async function removeEntry() {
-    if (!deleteEntry || busy || (!demo && !loaded)) return;
+    if (previewOnly || !deleteEntry || busy || (!demo && !loaded)) return;
     setBusy(true);
     setFormError("");
     try {
@@ -405,7 +408,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
   }
   async function savePlan(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (previewOnly || busy) return;
     setBusy(true);
     setFormError("");
     try {
@@ -520,7 +523,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
       .reduce((v, r) => v + r.amount, 0),
     limit: settings.budgets[name] || 0,
   }));
-  const actions = (r: Transaction) => (
+  const actions = (r: Transaction) => previewOnly ? null : (
     <div className="row-actions">
       <button
         disabled={busy || (!demo && !loaded)}
@@ -567,9 +570,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
               <th>Categoria</th>
               <th>Situação</th>
               <th className="numeric">Valor</th>
-              <th>
-                <span className="sr-only">Ações</span>
-              </th>
+              {!previewOnly && <th><span className="sr-only">Ações</span></th>}
             </tr>
           </thead>
           <tbody>
@@ -604,7 +605,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
                 >
                   {r.type === "income" ? "+" : "−"} {money(r.amount)}
                 </td>
-                <td>{actions(r)}</td>
+                {!previewOnly && <td>{actions(r)}</td>}
               </tr>
             ))}
           </tbody>
@@ -620,7 +621,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
             <p>
               {rows.length
                 ? "Ajuste os filtros para encontrar um lançamento."
-                : "Adicione sua primeira receita ou despesa."}
+                : previewOnly ? "Não há exemplos neste mês. Escolha outro período para explorar." : "Adicione sua primeira receita ou despesa."}
             </p>
           </div>
         )}
@@ -631,7 +632,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
     shiftMonth(month, i + 1),
   ).filter((value) => value <= "2100-12");
   return (
-    <div data-view={view} className={"app-shell studio-shell " + (sidebarCompact ? "sidebar-compact" : "")}>
+    <div data-view={view} data-read-only={previewOnly} className={"app-shell studio-shell " + (sidebarCompact ? "sidebar-compact" : "")}>
       <aside className="studio-sidebar" aria-label="Navegação principal">
         <Link href="/app" className="studio-brand" onClick={() => setView("overview")} aria-label="Zelo, início">{/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/zelo-logo.png" width={36} height={36} alt="" /><span>Zelo<span>.</span></span></Link>
@@ -660,7 +661,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
                 disabled={busy || savings.busy || personalProfile.busy}
                 onClick={() => chooseMode(!demo)}
               >
-                {demo ? "Usar meus dados" : "Ver demonstração"}
+                {previewOnly ? "Acesso pessoal em manutenção" : demo ? "Usar meus dados" : "Ver demonstração"}
               </button>
             </div>
             <div className="toolbar-actions">
@@ -674,15 +675,16 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
                 onOpenChange={setExportOpen}
                 onNotice={setNotice}
               />
-              <button
+              {!previewOnly && (<button
                 className="secondary-button"
                 onClick={openPlan}
                 disabled={busy || (!demo && !loaded)}
               >
                 <SlidersHorizontal size={16} /> Limites de gasto
-              </button>
+              </button>)}
             </div>
           </div>
+          {previewOnly && <div className="demo-readonly-banner"><ShieldCheck size={21} aria-hidden="true" /><div><strong>Demonstração · somente leitura</strong><p>Explore os exemplos fictícios. Criar ou alterar registros será exclusivo da sua conta. Login e cadastro estão em manutenção.</p></div></div>}
           {loadError && (
             <div className="error-banner" role="alert">
               <span>{loadError}</span>
@@ -712,7 +714,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
                   <h1>Meu mês<span>.</span></h1>
                   <p>Tudo o que importa, em um só lugar.</p>
                 </div>
-                <button className="intro-add" onClick={() => { rememberDialogFocus(); setEditing(null); setDraft(blankDraft(month)); setFormError(""); setEntryOpen(true); }} disabled={busy || (!demo && !loaded)}><Plus size={18} aria-hidden="true" />Novo lançamento</button>
+                {!previewOnly && (<button className="intro-add" onClick={() => { rememberDialogFocus(); setEditing(null); setDraft(blankDraft(month)); setFormError(""); setEntryOpen(true); }} disabled={busy || (!demo && !loaded)}><Plus size={18} aria-hidden="true" />Novo lançamento</button>)}
               </div>
               <div
                 className="overview-grid"
@@ -831,7 +833,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
                           <strong className="due-amount">
                             {money(r.amount)}
                           </strong>
-                          <button
+                          {!previewOnly && (<button
                             className="due-pay"
                             title="Marcar como pago"
                             aria-label={
@@ -841,7 +843,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
                             onClick={() => void toggleStatus(r, true)}
                           >
                             <Check size={17} />
-                          </button>
+                          </button>)}
                         </div>
                       ))}
                     {!summary.pendingExpense && (
@@ -909,7 +911,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
               </section>
             </>
           )}
-          {view === "profile" && <ProfilePage key={(demo ? "demo" : "personal") + (initialProfileEditing ? "edit" : "view")} controller={personalProfile} initialEditing={initialProfileEditing} />}
+          {view === "profile" && <ProfilePage key={(demo ? "demo" : "personal") + (initialProfileEditing ? "edit" : "view")} controller={personalProfile} initialEditing={initialProfileEditing && !previewOnly} />}
           {view === "savings" && (
             <SavingsPage
               key={demo ? "demo" : "personal"}
@@ -1106,13 +1108,13 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
               <section className="statement-panel">
                 <div className="section-head">
                   <h2>Despesas por categoria</h2>
-                  <button
+                  {!previewOnly && (<button
                     className="text-button"
                     onClick={openPlan}
                     disabled={busy || (!demo && !loaded)}
                   >
                     Ajustar limites
-                  </button>
+                  </button>)}
                 </div>
                 <div className="table-scroll">
                   <table className="data-table statement-table">
@@ -1262,9 +1264,9 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
           <SiteFooter demo={demo} monthLabel={monthTitle(month)} />
         </div>
       </main>
-      {view !== "savings" && view !== "profile" && (
+      {!previewOnly && view !== "savings" && view !== "profile" && (
         <div className="floating-entry">
-          <button
+          {!previewOnly && (<button
             className="floating-button"
             disabled={busy || (!demo && !loaded)}
             onClick={() => openEntry()}
@@ -1273,7 +1275,7 @@ export default function FinanceApp({ previewOnly = false, initialView = "overvie
             <Plus size={20} />
             <span>Novo lançamento</span>
             <kbd className="shortcut">Ctrl K</kbd>
-          </button>
+          </button>)}
         </div>
       )}
       <Dialog
