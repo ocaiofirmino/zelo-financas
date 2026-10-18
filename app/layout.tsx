@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./finance.css";
 import "./design-refresh.css";
 import "./motion.css";
+import "./local-polish.css";
 
 export const metadata: Metadata = {
   title: "Zelo · Finanças pessoais",
