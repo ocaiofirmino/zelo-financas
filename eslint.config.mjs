@@ -9,12 +9,11 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    "demo/dist/**",
+    "demo/node_modules/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Build estático e metadados gerados da demonstração; seu código continua no lint.
-    "demo/dist/**",
-    "demo/.vercel/**",
   ]),
   {
     files: ["components/ui/**/*.{ts,tsx}", "hooks/use-mobile.ts"],

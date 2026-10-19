@@ -24,6 +24,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: [
+      { find: "next/navigation", replacement: fileURLToPath(new URL("src/navigation.ts", import.meta.url)) },
       { find: "next/link", replacement: fileURLToPath(new URL("src/link.tsx", import.meta.url)) },
       { find: "@", replacement: repository },
       // Código compartilhado usa apenas as dependências instaladas nesta demo.

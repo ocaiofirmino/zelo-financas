@@ -18,9 +18,12 @@ export default function SiteFooter({ demo, monthLabel }: SiteFooterProps) {
       behavior: reducedMotion ? "instant" : "smooth",
     });
 
-    document
-      .querySelector<HTMLAnchorElement>(".app-header .brand")
-      ?.focus({ preventScroll: true });
+    const brand = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(
+        ".studio-sidebar .studio-brand, .app-header .brand",
+      ),
+    ).find((element) => element.getClientRects().length > 0);
+    brand?.focus({ preventScroll: true });
   }
 
   return (
