@@ -99,16 +99,25 @@ export const savingsEntries = sqliteTable(
   ],
 );
 
-export const profiles = sqliteTable("profiles", {
-  userId: text("userId").primaryKey(),
-  preferredName: text("preferredName").notNull(),
-  fullName: text("fullName").notNull().default(""),
-  email: text("email").notNull().default(""),
-  phone: text("phone").notNull().default(""),
-  occupation: text("occupation").notNull().default(""),
-  company: text("company").notNull().default(""),
-  monthlySalary: integer("monthlySalary"),
-  paydays: text("paydays").notNull().default("[]"),
-  avatar: text("avatar").notNull().default(""),
-  updatedAt: text("updatedAt").notNull(),
-}, (t) => [check("profile_salary_valid", sql`${t.monthlySalary} IS NULL OR (${t.monthlySalary} >= 0 AND ${t.monthlySalary} <= 1000000000)`)]);
+export const profiles = sqliteTable(
+  "profiles",
+  {
+    userId: text("userId").primaryKey(),
+    preferredName: text("preferredName").notNull(),
+    fullName: text("fullName").notNull().default(""),
+    email: text("email").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    occupation: text("occupation").notNull().default(""),
+    company: text("company").notNull().default(""),
+    monthlySalary: integer("monthlySalary"),
+    paydays: text("paydays").notNull().default("[]"),
+    avatar: text("avatar").notNull().default(""),
+    updatedAt: text("updatedAt").notNull(),
+  },
+  (t) => [
+    check(
+      "profile_salary_valid",
+      sql`${t.monthlySalary} IS NULL OR (${t.monthlySalary} >= 0 AND ${t.monthlySalary} <= 1000000000)`,
+    ),
+  ],
+);

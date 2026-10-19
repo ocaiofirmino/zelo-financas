@@ -4,15 +4,15 @@ import { useRouter } from "next/navigation";
 import ExportStatement from "./export-statement";
 import { PERSONAL_ACCOUNTS_ENABLED } from "@/lib/app-access";
 import SiteFooter from "./site-footer";
-import { MotionNav, transitionUI, useMotionDirector, useMotionView } from "./motion";
+import {
+  MotionNav,
+  transitionUI,
+  useMotionDirector,
+  useMotionView,
+} from "./motion";
 import { ProfileAvatar, ProfilePage, useProfile } from "./profile";
 import { SavingsOverview, SavingsPage, useSavings } from "./savings";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -66,7 +66,13 @@ import {
   type Transaction,
   type Settings,
 } from "@/lib/finance";
-type View = "overview" | "transactions" | "cards" | "statement" | "savings" | "profile";
+type View =
+  | "overview"
+  | "transactions"
+  | "cards"
+  | "statement"
+  | "savings"
+  | "profile";
 type Draft = {
   description: string;
   amount: string;
@@ -144,7 +150,15 @@ async function api(method: string, data?: unknown) {
     );
   return result;
 }
-export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, initialView = "overview", initialProfileEditing = false }: { previewOnly?: boolean; initialView?: View; initialProfileEditing?: boolean }) {
+export default function FinanceApp({
+  previewOnly: requestedPreviewOnly = false,
+  initialView = "overview",
+  initialProfileEditing = false,
+}: {
+  previewOnly?: boolean;
+  initialView?: View;
+  initialProfileEditing?: boolean;
+}) {
   const previewOnly = requestedPreviewOnly || !PERSONAL_ACCOUNTS_ENABLED;
   const router = useRouter();
   const [view, setView] = useMotionView<View>(initialView),
@@ -178,7 +192,10 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
   const personalProfile = useProfile(demo, previewOnly);
   const workspaceMotion = useMotionDirector(view + ":" + month + ":" + demo);
   function navigateMain(next: View) {
-    if (initialView === "profile") { router.push("/app?view=" + next); return; }
+    if (initialView === "profile") {
+      router.push("/app?view=" + next);
+      return;
+    }
     setView(next);
   }
   const dialogReturnFocus = useRef<HTMLElement | null>(null);
@@ -243,7 +260,8 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
           planOpen ||
           deleteEntry ||
           (!demo && !loaded) ||
-          (view === "savings" || view === "profile")
+          view === "savings" ||
+          view === "profile"
         )
           return;
         setEditing(null);
@@ -269,7 +287,10 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
   ]);
   function chooseMode(next: boolean) {
     if (busy || savings.busy || personalProfile.busy) return;
-    if (previewOnly && !next) { router.push("/cadastro"); return; }
+    if (previewOnly && !next) {
+      router.push("/cadastro");
+      return;
+    }
     setEntryOpen(false);
     setPlanOpen(false);
     setDeleteEntry(null);
@@ -525,42 +546,45 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
       .reduce((v, r) => v + r.amount, 0),
     limit: settings.budgets[name] || 0,
   }));
-  const actions = (r: Transaction) => previewOnly ? null : (
-    <div className="row-actions">
-      <button
-        disabled={busy || (!demo && !loaded)}
-        aria-label={
-          (r.status === "paid"
-            ? "Marcar como previsto: "
-            : "Marcar como realizado: ") + r.description
-        }
-        title={
-          r.status === "paid" ? "Marcar como previsto" : "Marcar como realizado"
-        }
-        onClick={() => void toggleStatus(r)}
-      >
-        {r.status === "paid" ? <RotateCcw size={16} /> : <Check size={17} />}
-      </button>
-      <button
-        disabled={busy || (!demo && !loaded)}
-        aria-label={"Editar " + r.description}
-        onClick={() => openEntry(r)}
-      >
-        <Pencil size={16} />
-      </button>
-      <button
-        disabled={busy || (!demo && !loaded)}
-        aria-label={"Excluir " + r.description}
-        onClick={() => {
-          rememberDialogFocus();
-          setFormError("");
-          setDeleteEntry(r);
-        }}
-      >
-        <Trash2 size={16} />
-      </button>
-    </div>
-  );
+  const actions = (r: Transaction) =>
+    previewOnly ? null : (
+      <div className="row-actions">
+        <button
+          disabled={busy || (!demo && !loaded)}
+          aria-label={
+            (r.status === "paid"
+              ? "Marcar como previsto: "
+              : "Marcar como realizado: ") + r.description
+          }
+          title={
+            r.status === "paid"
+              ? "Marcar como previsto"
+              : "Marcar como realizado"
+          }
+          onClick={() => void toggleStatus(r)}
+        >
+          {r.status === "paid" ? <RotateCcw size={16} /> : <Check size={17} />}
+        </button>
+        <button
+          disabled={busy || (!demo && !loaded)}
+          aria-label={"Editar " + r.description}
+          onClick={() => openEntry(r)}
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          disabled={busy || (!demo && !loaded)}
+          aria-label={"Excluir " + r.description}
+          onClick={() => {
+            rememberDialogFocus();
+            setFormError("");
+            setDeleteEntry(r);
+          }}
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    );
   function table(list: Transaction[]) {
     return (
       <div className="table-scroll">
@@ -572,7 +596,11 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
               <th>Categoria</th>
               <th>Situação</th>
               <th className="numeric">Valor</th>
-              {!previewOnly && <th><span className="sr-only">Ações</span></th>}
+              {!previewOnly && (
+                <th>
+                  <span className="sr-only">Ações</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -623,7 +651,9 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
             <p>
               {rows.length
                 ? "Ajuste os filtros para encontrar um lançamento."
-                : previewOnly ? "Não há exemplos neste mês. Escolha outro período para explorar." : "Adicione sua primeira receita ou despesa."}
+                : previewOnly
+                  ? "Não há exemplos neste mês. Escolha outro período para explorar."
+                  : "Adicione sua primeira receita ou despesa."}
             </p>
           </div>
         )}
@@ -634,17 +664,97 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
     shiftMonth(month, i + 1),
   ).filter((value) => value <= "2100-12");
   return (
-    <div data-view={view} data-read-only={previewOnly} className={"app-shell studio-shell " + (sidebarCompact ? "sidebar-compact" : "")}>
+    <div
+      data-view={view}
+      data-read-only={previewOnly}
+      className={
+        "app-shell studio-shell " + (sidebarCompact ? "sidebar-compact" : "")
+      }
+    >
       <aside className="studio-sidebar" aria-label="Navegação principal">
-        <Link href="/app" className="studio-brand" onClick={() => setView("overview")} aria-label="Zelo, início">{/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/zelo-logo.png" width={36} height={36} alt="" /><span>Zelo<span>.</span></span></Link>
-        <button className="sidebar-collapse" aria-label={sidebarCompact ? "Expandir navegação" : "Recolher navegação"} onClick={() => transitionUI(() => setSidebarCompact(!sidebarCompact))}>{sidebarCompact ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
+        <Link
+          href="/app"
+          className="studio-brand"
+          onClick={() => setView("overview")}
+          aria-label="Zelo, início"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/zelo-logo.png" width={36} height={36} alt="" />
+          <span>
+            Zelo<span>.</span>
+          </span>
+        </Link>
+        <button
+          className="sidebar-collapse"
+          aria-label={
+            sidebarCompact ? "Expandir navegação" : "Recolher navegação"
+          }
+          onClick={() => transitionUI(() => setSidebarCompact(!sidebarCompact))}
+        >
+          {sidebarCompact ? (
+            <PanelLeftOpen size={18} />
+          ) : (
+            <PanelLeftClose size={18} />
+          )}
+        </button>
         <span className="sidebar-caption">SEU ESPAÇO</span>
-        <MotionNav value={view} label="Navegação do Zelo">{nav.map(item => <button key={item.view} title={item.label} className={"studio-nav " + (view === item.view ? "selected" : "")} aria-current={view === item.view ? "page" : undefined} onClick={() => navigateMain(item.view)}><item.icon size={20} aria-hidden="true" /><span>{item.label}</span>{view === item.view && <i aria-hidden="true" />}</button>)}</MotionNav>
-        <div className="sidebar-note"><ShieldCheck size={21} aria-hidden="true" /><p>Cuidar do agora.<br /><strong>Planejar o amanhã.</strong></p></div>
-        <button type="button" className="sidebar-profile" aria-label="Abrir seu espaço pessoal" aria-current={view === "profile" ? "page" : undefined} onClick={() => setView("profile")}><ProfileAvatar profile={personalProfile.profile} /><div><strong>{personalProfile.profile.preferredName || "Seu espaço pessoal"}</strong><small>{demo ? "Perfil de demonstração" : "Ver meu perfil"}</small></div><ChevronRight size={15} aria-hidden="true" /></button>
+        <MotionNav value={view} label="Navegação do Zelo">
+          {nav.map((item) => (
+            <button
+              key={item.view}
+              title={item.label}
+              className={"studio-nav " + (view === item.view ? "selected" : "")}
+              aria-current={view === item.view ? "page" : undefined}
+              onClick={() => navigateMain(item.view)}
+            >
+              <item.icon size={20} aria-hidden="true" />
+              <span>{item.label}</span>
+              {view === item.view && <i aria-hidden="true" />}
+            </button>
+          ))}
+        </MotionNav>
+        <div className="sidebar-note">
+          <ShieldCheck size={21} aria-hidden="true" />
+          <p>
+            Cuidar do agora.
+            <br />
+            <strong>Planejar o amanhã.</strong>
+          </p>
+        </div>
+        <button
+          type="button"
+          className="sidebar-profile"
+          aria-label="Abrir seu espaço pessoal"
+          aria-current={view === "profile" ? "page" : undefined}
+          onClick={() => setView("profile")}
+        >
+          <ProfileAvatar profile={personalProfile.profile} />
+          <div>
+            <strong>
+              {personalProfile.profile.preferredName || "Seu espaço pessoal"}
+            </strong>
+            <small>{demo ? "Perfil de demonstração" : "Ver meu perfil"}</small>
+          </div>
+          <ChevronRight size={15} aria-hidden="true" />
+        </button>
       </aside>
-      <MotionNav value={view} className="studio-mobile-tabs" label="Navegação principal">{nav.map(item => <button key={item.view} aria-current={view === item.view ? "page" : undefined} className={view === item.view ? "selected" : ""} onClick={() => navigateMain(item.view)}><item.icon size={20} aria-hidden="true" /><span>{item.label}</span></button>)}</MotionNav>
+      <MotionNav
+        value={view}
+        className="studio-mobile-tabs"
+        label="Navegação principal"
+      >
+        {nav.map((item) => (
+          <button
+            key={item.view}
+            aria-current={view === item.view ? "page" : undefined}
+            className={view === item.view ? "selected" : ""}
+            onClick={() => navigateMain(item.view)}
+          >
+            <item.icon size={20} aria-hidden="true" />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </MotionNav>
       <IslandHeader
         view={view}
         month={month}
@@ -663,11 +773,24 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
                 disabled={busy || savings.busy || personalProfile.busy}
                 onClick={() => chooseMode(!demo)}
               >
-                {previewOnly ? "Acesso pessoal em manutenção" : demo ? "Usar meus dados" : "Ver demonstração"}
+                {previewOnly
+                  ? "Acesso pessoal em manutenção"
+                  : demo
+                    ? "Usar meus dados"
+                    : "Ver demonstração"}
               </button>
             </div>
             <div className="toolbar-actions">
-              <button type="button" className="profile-mobile-trigger" aria-label="Abrir seu espaço pessoal" aria-current={view === "profile" ? "page" : undefined} onClick={() => setView("profile")}><ProfileAvatar profile={personalProfile.profile} /><span>Meu perfil</span></button>
+              <button
+                type="button"
+                className="profile-mobile-trigger"
+                aria-label="Abrir seu espaço pessoal"
+                aria-current={view === "profile" ? "page" : undefined}
+                onClick={() => setView("profile")}
+              >
+                <ProfileAvatar profile={personalProfile.profile} />
+                <span>Meu perfil</span>
+              </button>
               <ExportStatement
                 transactions={allRows}
                 month={month}
@@ -677,16 +800,29 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
                 onOpenChange={setExportOpen}
                 onNotice={setNotice}
               />
-              {!previewOnly && (<button
-                className="secondary-button"
-                onClick={openPlan}
-                disabled={busy || (!demo && !loaded)}
-              >
-                <SlidersHorizontal size={16} /> Limites de gasto
-              </button>)}
+              {!previewOnly && (
+                <button
+                  className="secondary-button"
+                  onClick={openPlan}
+                  disabled={busy || (!demo && !loaded)}
+                >
+                  <SlidersHorizontal size={16} /> Limites de gasto
+                </button>
+              )}
             </div>
           </div>
-          {previewOnly && <div className="demo-readonly-banner"><ShieldCheck size={21} aria-hidden="true" /><div><strong>Demonstração · somente leitura</strong><p>Explore os exemplos fictícios. Criar ou alterar registros será exclusivo da sua conta. Login e cadastro estão em manutenção.</p></div></div>}
+          {previewOnly && (
+            <div className="demo-readonly-banner">
+              <ShieldCheck size={21} aria-hidden="true" />
+              <div>
+                <strong>Demonstração · somente leitura</strong>
+                <p>
+                  Explore os exemplos fictícios. Criar ou alterar registros será
+                  exclusivo da sua conta. Login e cadastro estão em manutenção.
+                </p>
+              </div>
+            </div>
+          )}
           {loadError && (
             <div className="error-banner" role="alert">
               <span>{loadError}</span>
@@ -697,7 +833,8 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
           )}
           {notice && (
             <div className="notice" role="status">
-              <Check size={18} aria-hidden="true" /><span>{notice}</span>
+              <Check size={18} aria-hidden="true" />
+              <span>{notice}</span>
             </div>
           )}
           {view !== "overview" && view !== "profile" && (
@@ -713,10 +850,27 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
               <div className="dashboard-intro">
                 <div>
                   <span className="eyebrow">Seu resumo financeiro</span>
-                  <h1>Meu mês<span>.</span></h1>
+                  <h1>
+                    Meu mês<span>.</span>
+                  </h1>
                   <p>Tudo o que importa, em um só lugar.</p>
                 </div>
-                {!previewOnly && (<button className="intro-add" onClick={() => { rememberDialogFocus(); setEditing(null); setDraft(blankDraft(month)); setFormError(""); setEntryOpen(true); }} disabled={busy || (!demo && !loaded)}><Plus size={18} aria-hidden="true" />Novo lançamento</button>)}
+                {!previewOnly && (
+                  <button
+                    className="intro-add"
+                    onClick={() => {
+                      rememberDialogFocus();
+                      setEditing(null);
+                      setDraft(blankDraft(month));
+                      setFormError("");
+                      setEntryOpen(true);
+                    }}
+                    disabled={busy || (!demo && !loaded)}
+                  >
+                    <Plus size={18} aria-hidden="true" />
+                    Novo lançamento
+                  </button>
+                )}
               </div>
               <div
                 className="overview-grid"
@@ -783,15 +937,61 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
                     <h2 id="category-heading">Para onde foi</h2>
                     <span className="mini-label">DESPESAS PAGAS</span>
                   </div>
-                  <div className="spending-total"><span>Total pago no mês</span><strong>{money(summary.expense)}</strong></div>
+                  <div className="spending-total">
+                    <span>Total pago no mês</span>
+                    <strong>{money(summary.expense)}</strong>
+                  </div>
                   <div className="spending-bars">
-                    {categoryTotals.filter(c => c.paid > 0).sort((a,b) => b.paid-a.paid).map(c => (
-                      <button className="spending-row" key={c.name} onClick={() => {setView("transactions");setCategoryFilter(c.name);setTypeFilter("expense");setStatusFilter("paid");setQuery("");}} aria-label={c.name + ": " + money(c.paid) + ". Ver lançamentos"}>
-                        <span className="spending-label"><span><i style={{background:c.color}} aria-hidden="true" />{c.name}</span><strong>{money(c.paid)}<small>{Math.round(c.paid/summary.expense*100)}%</small></strong></span>
-                        <span className="spending-track" aria-hidden="true"><span style={{width:(c.paid/summary.expense*100)+"%",background:c.color}} /></span>
-                      </button>
-                    ))}
-                    {!summary.expense && <div className="empty-state"><ReceiptText size={28} /><h3>Ainda sem despesas pagas</h3><p>Seus gastos aparecerão aqui por categoria.</p></div>}
+                    {categoryTotals
+                      .filter((c) => c.paid > 0)
+                      .sort((a, b) => b.paid - a.paid)
+                      .map((c) => (
+                        <button
+                          className="spending-row"
+                          key={c.name}
+                          onClick={() => {
+                            setView("transactions");
+                            setCategoryFilter(c.name);
+                            setTypeFilter("expense");
+                            setStatusFilter("paid");
+                            setQuery("");
+                          }}
+                          aria-label={
+                            c.name + ": " + money(c.paid) + ". Ver lançamentos"
+                          }
+                        >
+                          <span className="spending-label">
+                            <span>
+                              <i
+                                style={{ background: c.color }}
+                                aria-hidden="true"
+                              />
+                              {c.name}
+                            </span>
+                            <strong>
+                              {money(c.paid)}
+                              <small>
+                                {Math.round((c.paid / summary.expense) * 100)}%
+                              </small>
+                            </strong>
+                          </span>
+                          <span className="spending-track" aria-hidden="true">
+                            <span
+                              style={{
+                                width: (c.paid / summary.expense) * 100 + "%",
+                                background: c.color,
+                              }}
+                            />
+                          </span>
+                        </button>
+                      ))}
+                    {!summary.expense && (
+                      <div className="empty-state">
+                        <ReceiptText size={28} />
+                        <h3>Ainda sem despesas pagas</h3>
+                        <p>Seus gastos aparecerão aqui por categoria.</p>
+                      </div>
+                    )}
                   </div>
                   <p className="context-note">
                     Toque em uma categoria para ver os gastos.
@@ -835,17 +1035,19 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
                           <strong className="due-amount">
                             {money(r.amount)}
                           </strong>
-                          {!previewOnly && (<button
-                            className="due-pay"
-                            title="Marcar como pago"
-                            aria-label={
-                              "Marcar " + r.description + " como pago"
-                            }
-                            disabled={busy || (!demo && !loaded)}
-                            onClick={() => void toggleStatus(r, true)}
-                          >
-                            <Check size={17} />
-                          </button>)}
+                          {!previewOnly && (
+                            <button
+                              className="due-pay"
+                              title="Marcar como pago"
+                              aria-label={
+                                "Marcar " + r.description + " como pago"
+                              }
+                              disabled={busy || (!demo && !loaded)}
+                              onClick={() => void toggleStatus(r, true)}
+                            >
+                              <Check size={17} />
+                            </button>
+                          )}
                         </div>
                       ))}
                     {!summary.pendingExpense && (
@@ -913,7 +1115,16 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
               </section>
             </>
           )}
-          {view === "profile" && <ProfilePage key={(demo ? "demo" : "personal") + (initialProfileEditing ? "edit" : "view")} controller={personalProfile} initialEditing={initialProfileEditing && !previewOnly} />}
+          {view === "profile" && (
+            <ProfilePage
+              key={
+                (demo ? "demo" : "personal") +
+                (initialProfileEditing ? "edit" : "view")
+              }
+              controller={personalProfile}
+              initialEditing={initialProfileEditing && !previewOnly}
+            />
+          )}
           {view === "savings" && (
             <SavingsPage
               key={demo ? "demo" : "personal"}
@@ -1110,13 +1321,15 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
               <section className="statement-panel">
                 <div className="section-head">
                   <h2>Despesas por categoria</h2>
-                  {!previewOnly && (<button
-                    className="text-button"
-                    onClick={openPlan}
-                    disabled={busy || (!demo && !loaded)}
-                  >
-                    Ajustar limites
-                  </button>)}
+                  {!previewOnly && (
+                    <button
+                      className="text-button"
+                      onClick={openPlan}
+                      disabled={busy || (!demo && !loaded)}
+                    >
+                      Ajustar limites
+                    </button>
+                  )}
                 </div>
                 <div className="table-scroll">
                   <table className="data-table statement-table">
@@ -1268,16 +1481,18 @@ export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, 
       </main>
       {!previewOnly && view !== "savings" && view !== "profile" && (
         <div className="floating-entry">
-          {!previewOnly && (<button
-            className="floating-button"
-            disabled={busy || (!demo && !loaded)}
-            onClick={() => openEntry()}
-            aria-keyshortcuts="Control+k Meta+k"
-          >
-            <Plus size={20} />
-            <span>Novo lançamento</span>
-            <kbd className="shortcut">Ctrl K</kbd>
-          </button>)}
+          {!previewOnly && (
+            <button
+              className="floating-button"
+              disabled={busy || (!demo && !loaded)}
+              onClick={() => openEntry()}
+              aria-keyshortcuts="Control+k Meta+k"
+            >
+              <Plus size={20} />
+              <span>Novo lançamento</span>
+              <kbd className="shortcut">Ctrl K</kbd>
+            </button>
+          )}
         </div>
       )}
       <Dialog

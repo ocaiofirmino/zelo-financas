@@ -1,55 +1,229 @@
 /* Movimento do Zelo: navegação, conteúdo e feedback com o mesmo ritmo. */
-:root { --zelo-motion-ease:cubic-bezier(.22,1,.36,1); }
-.motion-nav { position:relative; isolation:isolate; }
-.motion-nav-highlight { position:absolute; top:0; left:0; pointer-events:none; z-index:-1; border:1px solid #00df8124; border-radius:18px; background:#00df8116; box-shadow:inset 0 1px 0 #ffffff08; }
-.motion-nav[data-nav-ready="true"] .motion-nav-highlight { transition:transform 480ms var(--zelo-motion-ease),opacity 200ms ease; }
-.motion-nav .studio-nav { position:relative; }
-.motion-nav .studio-nav.selected { background:transparent; border-color:transparent; box-shadow:none; }
-.motion-nav .studio-nav { transition:color 180ms ease,background-color 180ms ease; }
-.motion-nav .studio-nav svg { transition:transform 250ms var(--zelo-motion-ease),color 180ms ease; }
-.motion-nav .studio-nav.selected svg { transform:scale(1.08); }
-.studio-mobile-tabs.motion-nav button.selected { background:transparent; }
-.studio-mobile-tabs.motion-nav .motion-nav-highlight { border-radius:22px; }
-.preview-tabs.motion-nav .motion-nav-highlight { background:var(--forest); border-color:transparent; border-radius:999px; }
-.preview-tabs.motion-nav button.active { background:transparent; }
-.spending-track > span,.savings-progress > span,.due-track > div { transform-origin:left center; }
-.balance-sparkline .sparkline-actual { stroke-dasharray:1; stroke-dashoffset:0; }
-.balance-sparkline circle { transform-box:fill-box; transform-origin:center; }
-.notice,.savings-notice { display:flex; align-items:center; gap:10px; }
-.notice > svg,.savings-notice > svg { flex-shrink:0; color:var(--primary); }
-.workspace { view-transition-name:zelo-content; }
-.studio-sidebar { view-transition-name:zelo-sidebar; }
-.studio-mobile-tabs { view-transition-name:zelo-mobile-nav; }
-.welcome-screen { view-transition-name:zelo-welcome-screen; }
-::view-transition { pointer-events:none; }
-::view-transition-old(root),::view-transition-new(root) { animation:none; mix-blend-mode:normal; }
-::view-transition-group(zelo-content),::view-transition-group(zelo-sidebar),::view-transition-group(zelo-mobile-nav),::view-transition-group(zelo-welcome-screen) { animation-duration:380ms; animation-timing-function:var(--zelo-motion-ease); }
-::view-transition-old(zelo-content),::view-transition-old(zelo-welcome-screen) { animation:zelo-page-out 160ms ease both; }
-::view-transition-new(zelo-content),::view-transition-new(zelo-welcome-screen) { animation:zelo-page-in 420ms var(--zelo-motion-ease) both; }
-::view-transition-old(zelo-sidebar),::view-transition-old(zelo-mobile-nav) { animation:none; opacity:0; }
-::view-transition-new(zelo-sidebar),::view-transition-new(zelo-mobile-nav) { animation:none; }
-@keyframes zelo-page-in { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-@keyframes zelo-page-out { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(-6px); } }
-@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
- .savings-card { transition:transform 260ms var(--zelo-motion-ease),box-shadow 260ms ease; }
- .savings-card:hover { transform:translateY(-4px); box-shadow:inset 0 1px 0 #00df8130,0 12px 30px #00000016; }
- .primary-button,.intro-add,.floating-button { transition:transform 180ms var(--zelo-motion-ease),background-color 180ms ease,box-shadow 180ms ease; }
- .primary-button:hover:not(:disabled),.intro-add:hover:not(:disabled) { transform:translateY(-2px); }
- .text-button svg,.site-footer-top svg { transition:transform 220ms var(--zelo-motion-ease); }
- .text-button:hover svg { transform:translateX(3px); }
- .site-footer-top:hover svg { transform:translateY(-3px); }
- .sidebar-profile .profile-avatar { transition:transform 240ms var(--zelo-motion-ease); }
- .sidebar-profile:hover .profile-avatar { transform:scale(1.06); }
- .stage-art { perspective:1000px; }
- .stage-product { rotate:y var(--stage-tilt,0deg); translate:var(--stage-x,0px) var(--stage-y,0px); transition:rotate 260ms var(--zelo-motion-ease),translate 260ms var(--zelo-motion-ease); }
+:root {
+  --zelo-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
-@media (prefers-reduced-motion:no-preference) {
- .app-shell button:active:not(:disabled),.welcome button:active:not(:disabled) { transform:scale(.98); }
+.motion-nav {
+  position: relative;
+  isolation: isolate;
 }
-@media (max-width:900px) { .studio-mobile-tabs.motion-nav { position:fixed; } }
-@media (prefers-reduced-motion:reduce) {
- .motion-nav .motion-nav-highlight { transition:none !important; }
- .workspace,.studio-sidebar,.studio-mobile-tabs,.welcome-screen { view-transition-name:none; }
- ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*) { animation:none !important; }
- .stage-product { rotate:none; translate:none; }
+.motion-nav-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: -1;
+  border: 1px solid #00df8124;
+  border-radius: 18px;
+  background: #00df8116;
+  box-shadow: inset 0 1px 0 #ffffff08;
+}
+.motion-nav[data-nav-ready="true"] .motion-nav-highlight {
+  transition:
+    transform 480ms var(--zelo-motion-ease),
+    opacity 200ms ease;
+}
+.motion-nav .studio-nav {
+  position: relative;
+}
+.motion-nav .studio-nav.selected {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.motion-nav .studio-nav {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+.motion-nav .studio-nav svg {
+  transition:
+    transform 250ms var(--zelo-motion-ease),
+    color 180ms ease;
+}
+.motion-nav .studio-nav.selected svg {
+  transform: scale(1.08);
+}
+.studio-mobile-tabs.motion-nav button.selected {
+  background: transparent;
+}
+.studio-mobile-tabs.motion-nav .motion-nav-highlight {
+  border-radius: 22px;
+}
+.preview-tabs.motion-nav .motion-nav-highlight {
+  background: var(--forest);
+  border-color: transparent;
+  border-radius: 999px;
+}
+.preview-tabs.motion-nav button.active {
+  background: transparent;
+}
+.spending-track > span,
+.savings-progress > span,
+.due-track > div {
+  transform-origin: left center;
+}
+.balance-sparkline .sparkline-actual {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.balance-sparkline circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.notice,
+.savings-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.notice > svg,
+.savings-notice > svg {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+.workspace {
+  view-transition-name: zelo-content;
+}
+.studio-sidebar {
+  view-transition-name: zelo-sidebar;
+}
+.studio-mobile-tabs {
+  view-transition-name: zelo-mobile-nav;
+}
+.welcome-screen {
+  view-transition-name: zelo-welcome-screen;
+}
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-group(zelo-content),
+::view-transition-group(zelo-sidebar),
+::view-transition-group(zelo-mobile-nav),
+::view-transition-group(zelo-welcome-screen) {
+  animation-duration: 380ms;
+  animation-timing-function: var(--zelo-motion-ease);
+}
+::view-transition-old(zelo-content),
+::view-transition-old(zelo-welcome-screen) {
+  animation: zelo-page-out 160ms ease both;
+}
+::view-transition-new(zelo-content),
+::view-transition-new(zelo-welcome-screen) {
+  animation: zelo-page-in 420ms var(--zelo-motion-ease) both;
+}
+::view-transition-old(zelo-sidebar),
+::view-transition-old(zelo-mobile-nav) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(zelo-sidebar),
+::view-transition-new(zelo-mobile-nav) {
+  animation: none;
+}
+@keyframes zelo-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes zelo-page-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .savings-card {
+    transition:
+      transform 260ms var(--zelo-motion-ease),
+      box-shadow 260ms ease;
+  }
+  .savings-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      inset 0 1px 0 #00df8130,
+      0 12px 30px #00000016;
+  }
+  .primary-button,
+  .intro-add,
+  .floating-button {
+    transition:
+      transform 180ms var(--zelo-motion-ease),
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+  .primary-button:hover:not(:disabled),
+  .intro-add:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  .text-button svg,
+  .site-footer-top svg {
+    transition: transform 220ms var(--zelo-motion-ease);
+  }
+  .text-button:hover svg {
+    transform: translateX(3px);
+  }
+  .site-footer-top:hover svg {
+    transform: translateY(-3px);
+  }
+  .sidebar-profile .profile-avatar {
+    transition: transform 240ms var(--zelo-motion-ease);
+  }
+  .sidebar-profile:hover .profile-avatar {
+    transform: scale(1.06);
+  }
+  .stage-art {
+    perspective: 1000px;
+  }
+  .stage-product {
+    rotate: y var(--stage-tilt, 0deg);
+    translate: var(--stage-x, 0px) var(--stage-y, 0px);
+    transition:
+      rotate 260ms var(--zelo-motion-ease),
+      translate 260ms var(--zelo-motion-ease);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-shell button:active:not(:disabled),
+  .welcome button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+@media (max-width: 900px) {
+  .studio-mobile-tabs.motion-nav {
+    position: fixed;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-nav .motion-nav-highlight {
+    transition: none !important;
+  }
+  .workspace,
+  .studio-sidebar,
+  .studio-mobile-tabs,
+  .welcome-screen {
+    view-transition-name: none;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .stage-product {
+    rotate: none;
+    translate: none;
+  }
 }

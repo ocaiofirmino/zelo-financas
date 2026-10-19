@@ -1,2 +1,4 @@
 import Welcome from "../welcome";
-export default function Page() { return <Welcome initialScreen="login" />; }
+export default function Page() {
+  return <Welcome initialScreen="login" />;
+}

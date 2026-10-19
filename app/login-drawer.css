@@ -1,4 +1,263 @@
-.z-login-drawer{position:fixed;inset:0 0 0 auto;margin:0;width:480px;max-width:100vw;height:100dvh;max-height:100dvh;padding:0;border:0;border-radius:0;background:var(--pine);color:var(--foreground);overflow-y:auto;overscroll-behavior:contain;font-family:Manrope,sans-serif}.z-login-drawer[open]{animation:z-login-enter 340ms cubic-bezier(.22,1,.36,1) both}.z-login-drawer::backdrop{background:#001b1bbf;animation:z-backdrop-enter 280ms ease both}.z-login-drawer[data-closing=true]{animation:z-login-exit 280ms cubic-bezier(.4,0,1,1) both}.z-login-drawer[data-closing=true]::backdrop{animation:z-backdrop-exit 280ms ease both}
-.z-login-inner{display:flex;flex-direction:column;min-height:100%;padding:28px 36px;box-sizing:border-box}.z-login-header{display:flex;justify-content:space-between;align-items:center;gap:20px;position:sticky;top:-1px;z-index:2;background:var(--pine);padding-block:8px}.z-login-brand{font-size:28px;font-weight:700;letter-spacing:-1.5px}.z-login-close{display:grid;place-items:center;min-width:44px;min-height:44px;border:0;border-radius:50%;background:var(--forest);color:var(--foreground);cursor:pointer;transition:transform .2s}.z-login-close:hover{transform:rotate(90deg)}.z-login-body{margin-block:auto;padding-block:38px;animation:z-auth-change 260ms cubic-bezier(.22,1,.36,1) both}.z-login-drawer .z-login-body h2{font-size:42px;line-height:1.12;letter-spacing:-.055em;color:var(--foreground);font-weight:500;margin:0}.z-login-body h2:focus{outline:none}.z-login-body>p{font-size:16px;line-height:1.7;margin-top:18px;max-width:35ch;color:var(--pistachio)}.z-auth-switch{display:flex;gap:6px;margin-bottom:30px}.z-auth-switch button{border:0;border-radius:999px;min-height:44px;padding:10px 19px;background:var(--background);color:var(--pistachio);font:inherit;font-size:14px;cursor:pointer}.z-auth-switch button[aria-pressed=true]{background:var(--pistachio);color:var(--background)}.z-maintenance-icon{color:var(--primary);margin-bottom:24px}.z-maintenance-note{display:flex;gap:13px;background:var(--background);padding:20px;border-radius:16px;margin:26px 0;color:var(--pistachio)}.z-maintenance-note svg{flex-shrink:0;margin-top:3px;color:var(--primary)}.z-maintenance-note p{font-size:14px;line-height:1.7}.z-login-submit{display:flex;align-items:center;justify-content:space-between;gap:20px;width:100%;border:0;border-radius:999px;background:var(--primary);color:var(--primary-foreground)!important;font:inherit;font-size:16px;font-weight:650;min-height:56px;padding:15px 22px;cursor:pointer;transition:transform .2s;text-decoration:none}.z-login-submit:hover{transform:translateY(-2px)}.z-maintenance-back{min-height:44px;display:block;width:100%;border:0;background:transparent;color:var(--foreground);font:inherit;font-size:14px;margin-top:12px;cursor:pointer}.z-login-footer{display:flex;align-items:flex-start;gap:10px;color:var(--pistachio);padding-top:24px}.z-login-footer svg{flex-shrink:0;margin-top:3px}.z-login-footer p{font-size:13px;line-height:1.6;max-width:38ch}.z-mobile-login{display:none}
-@keyframes z-login-enter{from{transform:translateX(100%)}to{transform:translateX(0)}}@keyframes z-login-exit{from{transform:translateX(0)}to{transform:translateX(100%)}}@keyframes z-backdrop-enter{from{opacity:0}to{opacity:1}}@keyframes z-backdrop-exit{from{opacity:1}to{opacity:0}}@keyframes z-auth-change{from{opacity:.4;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
-@media(max-width:760px){.z-login-drawer{width:100vw}.z-login-inner{padding:20px 24px max(24px,env(safe-area-inset-bottom))}.z-login-drawer .z-login-body h2{font-size:38px}.z-mobile-login{display:flex;align-items:center;gap:14px;min-height:44px;border:0;background:transparent;color:var(--foreground);font:inherit;padding:12px 0;cursor:pointer}}@media(prefers-reduced-motion:reduce){.z-login-drawer[open],.z-login-drawer[data-closing=true],.z-login-drawer::backdrop,.z-login-drawer[data-closing=true]::backdrop,.z-login-body{animation:none}.z-login-drawer *{transition:none!important}}
+.z-login-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: 480px;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--pine);
+  color: var(--foreground);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-family: Manrope, sans-serif;
+}
+.z-login-drawer[open] {
+  animation: z-login-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.z-login-drawer::backdrop {
+  background: #001b1bbf;
+  animation: z-backdrop-enter 280ms ease both;
+}
+.z-login-drawer[data-closing="true"] {
+  animation: z-login-exit 280ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+.z-login-drawer[data-closing="true"]::backdrop {
+  animation: z-backdrop-exit 280ms ease both;
+}
+.z-login-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 28px 36px;
+  box-sizing: border-box;
+}
+.z-login-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  background: var(--pine);
+  padding-block: 8px;
+}
+.z-login-brand {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+}
+.z-login-close {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--forest);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.z-login-close:hover {
+  transform: rotate(90deg);
+}
+.z-login-body {
+  margin-block: auto;
+  padding-block: 38px;
+  animation: z-auth-change 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.z-login-drawer .z-login-body h2 {
+  font-size: 42px;
+  line-height: 1.12;
+  letter-spacing: -0.055em;
+  color: var(--foreground);
+  font-weight: 500;
+  margin: 0;
+}
+.z-login-body h2:focus {
+  outline: none;
+}
+.z-login-body > p {
+  font-size: 16px;
+  line-height: 1.7;
+  margin-top: 18px;
+  max-width: 35ch;
+  color: var(--pistachio);
+}
+.z-auth-switch {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 30px;
+}
+.z-auth-switch button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 10px 19px;
+  background: var(--background);
+  color: var(--pistachio);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.z-auth-switch button[aria-pressed="true"] {
+  background: var(--pistachio);
+  color: var(--background);
+}
+.z-maintenance-icon {
+  color: var(--primary);
+  margin-bottom: 24px;
+}
+.z-maintenance-note {
+  display: flex;
+  gap: 13px;
+  background: var(--background);
+  padding: 20px;
+  border-radius: 16px;
+  margin: 26px 0;
+  color: var(--pistachio);
+}
+.z-maintenance-note svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--primary);
+}
+.z-maintenance-note p {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.z-login-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground) !important;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  min-height: 56px;
+  padding: 15px 22px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  text-decoration: none;
+}
+.z-login-submit:hover {
+  transform: translateY(-2px);
+}
+.z-maintenance-back {
+  min-height: 44px;
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 14px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+.z-login-footer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--pistachio);
+  padding-top: 24px;
+}
+.z-login-footer svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.z-login-footer p {
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 38ch;
+}
+.z-mobile-login {
+  display: none;
+}
+@keyframes z-login-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes z-login-exit {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes z-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes z-backdrop-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes z-auth-change {
+  from {
+    opacity: 0.4;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (max-width: 760px) {
+  .z-login-drawer {
+    width: 100vw;
+  }
+  .z-login-inner {
+    padding: 20px 24px max(24px, env(safe-area-inset-bottom));
+  }
+  .z-login-drawer .z-login-body h2 {
+    font-size: 38px;
+  }
+  .z-mobile-login {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    font: inherit;
+    padding: 12px 0;
+    cursor: pointer;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .z-login-drawer[open],
+  .z-login-drawer[data-closing="true"],
+  .z-login-drawer::backdrop,
+  .z-login-drawer[data-closing="true"]::backdrop,
+  .z-login-body {
+    animation: none;
+  }
+  .z-login-drawer * {
+    transition: none !important;
+  }
+}

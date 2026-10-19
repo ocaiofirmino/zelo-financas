@@ -17,7 +17,11 @@ export const metadata: Metadata = {
       { url: "/zelo-icon-192.png", type: "image/png", sizes: "192x192" },
     ],
     shortcut: "/favicon.ico",
-    apple: { url: "/zelo-apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    apple: {
+      url: "/zelo-apple-touch-icon.png",
+      sizes: "180x180",
+      type: "image/png",
+    },
   },
 };
 

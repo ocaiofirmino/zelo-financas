@@ -118,7 +118,10 @@ export function useSavings(demo: boolean, readOnly = false) {
   }, [demo, reload, invalidateRequests]);
 
   async function mutate(method: string, body: Record<string, unknown>) {
-    if (readOnly) throw new Error("Demonstração somente leitura. Registros próprios exigem uma conta; o acesso está em manutenção.");
+    if (readOnly)
+      throw new Error(
+        "Demonstração somente leitura. Registros próprios exigem uma conta; o acesso está em manutenção.",
+      );
     if (lock.current) throw new Error("Aguarde o registro em andamento.");
     if (!demo && (!loaded || error))
       throw new Error("Carregue seus cofrinhos antes de alterar os dados.");
@@ -678,7 +681,9 @@ export function SavingsPage({
             transferências bancárias.
           </span>
         </div>
-        <button hidden={controller.readOnly} data-personal-action
+        <button
+          hidden={controller.readOnly}
+          data-personal-action
           className="primary-button savings-new"
           disabled={!ready}
           onClick={() => openGoal()}
@@ -700,7 +705,8 @@ export function SavingsPage({
       )}
       {notice && (
         <div className="notice" role="status">
-          <Check size={18} aria-hidden="true" /><span>{notice}</span>
+          <Check size={18} aria-hidden="true" />
+          <span>{notice}</span>
         </div>
       )}
       {!loaded ? (
@@ -767,7 +773,9 @@ export function SavingsPage({
                       : "Crie uma meta, escolha seus dias de aporte e acompanhe o dinheiro guardado."}
                   </p>
                   {!archived && (
-                    <button hidden={controller.readOnly} data-personal-action
+                    <button
+                      hidden={controller.readOnly}
+                      data-personal-action
                       className="primary-button"
                       disabled={!ready}
                       onClick={() => openGoal()}
@@ -854,7 +862,9 @@ export function SavingsPage({
                         </div>
                         <div className="savings-card-actions">
                           {!goal.archived && (
-                            <button hidden={controller.readOnly} data-personal-action
+                            <button
+                              hidden={controller.readOnly}
+                              data-personal-action
                               className="primary-button"
                               disabled={!ready}
                               onClick={() => openEntry(goal)}
@@ -899,7 +909,9 @@ export function SavingsPage({
                       <strong>{item.goal.name}</strong>
                       <span>{money(item.amount)}</span>
                     </div>
-                    <button hidden={controller.readOnly} data-personal-action
+                    <button
+                      hidden={controller.readOnly}
+                      data-personal-action
                       className="savings-icon-button"
                       disabled={!ready}
                       title="Registrar valor guardado hoje"
@@ -1032,14 +1044,18 @@ export function SavingsPage({
                 </div>
               )}
               <div className="savings-detail-actions" hidden={readOnly}>
-                <button hidden={controller.readOnly} data-personal-action
+                <button
+                  hidden={controller.readOnly}
+                  data-personal-action
                   className="secondary-button"
                   disabled={!ready || detail.archived}
                   onClick={() => openGoal(detail)}
                 >
                   <Pencil size={15} /> Editar meta
                 </button>
-                <button hidden={controller.readOnly} data-personal-action
+                <button
+                  hidden={controller.readOnly}
+                  data-personal-action
                   className="secondary-button"
                   disabled={
                     !ready ||
@@ -1050,7 +1066,9 @@ export function SavingsPage({
                 >
                   <ArrowUpRight size={16} /> Registrar retirada
                 </button>
-                <button hidden={controller.readOnly} data-personal-action
+                <button
+                  hidden={controller.readOnly}
+                  data-personal-action
                   className="text-button"
                   disabled={!ready}
                   onClick={() => void archive(detail)}
@@ -1063,7 +1081,9 @@ export function SavingsPage({
                   {detail.archived ? "Restaurar" : "Arquivar"}
                 </button>
                 {!data.entries.some((entry) => entry.goalId === detail.id) && (
-                  <button hidden={controller.readOnly} data-personal-action
+                  <button
+                    hidden={controller.readOnly}
+                    data-personal-action
                     className="text-button negative"
                     disabled={!ready}
                     onClick={() =>
@@ -1108,7 +1128,9 @@ export function SavingsPage({
                         {entry.kind !== "withdrawal" ? "+" : "−"}{" "}
                         {money(entry.amount)}
                       </strong>
-                      <button hidden={controller.readOnly} data-personal-action
+                      <button
+                        hidden={controller.readOnly}
+                        data-personal-action
                         className="savings-icon-button"
                         disabled={!ready || detail.archived}
                         aria-label={

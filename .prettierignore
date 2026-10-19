@@ -1,0 +1,17 @@
+# Generated files and third-party styles
+**/node_modules/
+**/dist/
+.next/
+.vinext/
+.wrangler/
+.taste-skill/
+.openai/
+.sites-runtime/
+coverage/
+outputs/
+work/
+vendor/
+drizzle/meta/
+**/package-lock.json
+next-env.d.ts
+cloudflare-env.d.ts

@@ -1,4 +1,7 @@
-import { PERSONAL_ACCOUNTS_ENABLED, personalAccessUnavailable } from "@/lib/app-access";
+import {
+  PERSONAL_ACCOUNTS_ENABLED,
+  personalAccessUnavailable,
+} from "@/lib/app-access";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { database } from "@/db/raw";
 import {
