@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ExportStatement from "./export-statement";
+import { PERSONAL_ACCOUNTS_ENABLED } from "@/lib/app-access";
 import SiteFooter from "./site-footer";
 import { MotionNav, transitionUI, useMotionDirector, useMotionView } from "./motion";
 import { ProfileAvatar, ProfilePage, useProfile } from "./profile";
@@ -143,7 +144,8 @@ async function api(method: string, data?: unknown) {
     );
   return result;
 }
-export default function FinanceApp({ previewOnly = false, initialView = "overview", initialProfileEditing = false }: { previewOnly?: boolean; initialView?: View; initialProfileEditing?: boolean }) {
+export default function FinanceApp({ previewOnly: requestedPreviewOnly = false, initialView = "overview", initialProfileEditing = false }: { previewOnly?: boolean; initialView?: View; initialProfileEditing?: boolean }) {
+  const previewOnly = requestedPreviewOnly || !PERSONAL_ACCOUNTS_ENABLED;
   const router = useRouter();
   const [view, setView] = useMotionView<View>(initialView),
     [month, setMonth] = useState(localMonth()),

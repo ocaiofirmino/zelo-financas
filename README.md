@@ -2,13 +2,13 @@
 
 Organize receitas e despesas, entenda seu mês e dê espaço aos seus planos.
 
-## Estado desta branch
+## Estado do projeto
 
-**`newdesign` — demonstração somente leitura, com dados fictícios. Login e cadastro em manutenção.**
+**Demonstração somente leitura, com dados fictícios. Login e cadastro em manutenção.**
 
 Esta atualização entrega o novo design. **Login, criação de contas, sessões e integração do fluxo com o banco de dados ainda serão implementados/integrados.** Os acessos de login e cadastro exibem avisos de manutenção, sem campos ou coleta de dados. O controle pessoal permanece desabilitado.
 
-A base financeira e o histórico do MVP estão na [`main`](https://github.com/ocaiofirmino/zelo-financas/tree/main). Esta branch já contém esquema, migrações e código de API para SQLite/Cloudflare D1; isso não equivale a um cadastro integrado e pronto para uso.
+A `main` reúne o novo design e a base financeira; `demo/vercel` recebe a mesma versão para a demonstração estática. O projeto contém esquema, migrações e código de API para SQLite/Cloudflare D1; isso não equivale a um cadastro integrado e pronto para uso.
 
 ## O que esta atualização entrega
 
@@ -26,7 +26,7 @@ A base financeira e o histórico do MVP estão na [`main`](https://github.com/oc
 
 O projeto inclui regras financeiras em centavos, parcelas, categorias, metas/limites e exportação de extratos em Excel/CSV/CSV para Power BI. Há também interfaces e regras de cofrinhos e perfil. Na demonstração, os exemplos podem ser consultados, mas não alterados. Não há movimentação de dinheiro nem persistência em uma conta pessoal.
 
-A flag `PERSONAL_ACCOUNTS_ENABLED` está em `false`. As APIs pessoais de finanças, cofrinhos e perfil permanecem bloqueadas antes de acessar autenticação e banco.
+A flag `PERSONAL_ACCOUNTS_ENABLED` está em `false` e também força o painel ao modo demonstrativo, independentemente da preferência local. As APIs pessoais de finanças, cofrinhos e perfil permanecem bloqueadas antes de acessar autenticação e banco.
 
 ## Próximas etapas
 
