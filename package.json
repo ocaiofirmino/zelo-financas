@@ -14,7 +14,14 @@
     "db:generate": "drizzle-kit generate",
     "db:setup": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_wonderful_thunderbird.sql",
     "test:finance": "node --experimental-strip-types tests/check-finance.mjs",
-    "test:export": "node --experimental-strip-types tests/check-export.mjs"
+    "test:export": "node --experimental-strip-types tests/check-export.mjs",
+    "db:cofrinhos": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_cofrinhos.sql",
+    "test:savings": "node --experimental-strip-types tests/check-savings.mjs",
+    "test:savings-api": "node tests/check-savings-api.mjs",
+    "test:profile": "node --experimental-strip-types tests/check-profile.mjs",
+    "test:profile-api": "node --experimental-strip-types tests/check-profile-api.mjs",
+    "db:perfil": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_perfil.sql",
+    "test:access": "node --experimental-strip-types tests/check-access.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

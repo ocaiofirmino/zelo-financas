@@ -1,0 +1,25 @@
+import assert from "node:assert/strict";
+import { emptyProfile, demoProfile, nextPaydays, parseProfileSalary, validateProfile } from "../lib/profile.ts";
+const valid = { ...demoProfile, preferredName: "  Alex  ", paydays: [20,5] };
+assert.equal(validateProfile(valid).preferredName,"Alex");
+assert.deepEqual(validateProfile(valid).paydays,[5,20]);
+assert.equal(validateProfile({...valid,monthlySalary:null}).monthlySalary,null);
+assert.equal(validateProfile({...valid,monthlySalary:0}).monthlySalary,0);
+for(const monthlySalary of [-1,1.5,Infinity,1000000001,"3500"]) assert.throws(()=>validateProfile({...valid,monthlySalary}));
+for(const paydays of [[0],[32],[5,5],[1.5],["5"],[1,2,3,4,5,6,7]]) assert.throws(()=>validateProfile({...valid,paydays}));
+assert.throws(()=>validateProfile({...emptyProfile,preferredName:"   "}));
+assert.throws(()=>validateProfile({...valid,email:"endereco-invalido"}));
+assert.throws(()=>validateProfile({...valid,phone:"abc 123"}));
+assert.throws(()=>validateProfile({...valid,avatar:"data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="}));
+assert.throws(()=>validateProfile({...valid,avatar:"data:image/png;base64,YWJj"}));
+assert.throws(()=>validateProfile({...valid,avatar:"https://example.com/photo.png"}));
+const result=validateProfile({...valid,userId:"other-user"});assert.equal("userId" in result,false);
+assert.deepEqual(nextPaydays([5,20],"2026-10-17"),["2026-10-20","2026-11-05","2026-11-20"]);
+assert.deepEqual(nextPaydays([30,31],"2026-02-01",2),["2026-02-28","2026-03-30"]);
+assert.deepEqual(nextPaydays([31],"2028-02-01",1),["2028-02-29"]);
+assert.deepEqual(nextPaydays([5],"2026-10-05",1),["2026-10-05"]);
+assert.deepEqual(nextPaydays([],"2026-10-17"),[]);
+console.log("Perfil: dados, centavos, fotos, quinzena, mês curto e ano bissexto conferidos.");
+
+for(const input of ["4.500,50","4500,50","4500.50","R$ 4.500,50"]) assert.equal(parseProfileSalary(input),450050);
+for(const input of ["4.50,50","4,500.50","salário",""]) assert.ok(Number.isNaN(parseProfileSalary(input)));
