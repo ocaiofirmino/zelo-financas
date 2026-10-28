@@ -1,0 +1,34 @@
+name: Captura da tela de cartões
+on:
+  push:
+    branches: [preview/cartoes-print-20261028]
+permissions:
+  contents: read
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+      - run: npm ci --prefix demo
+      - run: npm run build --prefix demo
+      - name: Capturar cartões no Chrome
+        env:
+          ZELO_SOURCE_SHA: 75b0b1521118161b636e510d520133abec7e97b6
+        run: |
+          npm run preview --prefix demo -- --host 127.0.0.1 --port 4173 >/tmp/zelo-preview.log 2>&1 &
+          ZELO_SERVER_PID=$!
+          google-chrome --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-port=9222 --user-data-dir=/tmp/zelo-capture-browser >/tmp/zelo-chrome.log 2>&1 &
+          ZELO_BROWSER_PID=$!
+          trap 'kill "$ZELO_SERVER_PID" "$ZELO_BROWSER_PID" 2>/dev/null || true' EXIT
+          node scripts/capture-cards-preview.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zelo-multicartoes
+          path: /tmp/zelo-multicartoes.png
+          retention-days: 1
