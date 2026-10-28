@@ -73,6 +73,17 @@ npm run test:cards
 npm run test:cards-api
 ```
 
+## Padrão de código
+
+O projeto usa Prettier 3.6.2 com a configuração de `.prettierrc.json`: indentação de dois espaços, aspas duplas, ponto e vírgula e quebras de linha LF. O comando percorre todo o projeto, incluindo TypeScript/TSX/MTS, JavaScript, CSS, JSON, HTML, Markdown e YAML. Dependências, arquivos gerados e estilos de terceiros seguem as exclusões de `.prettierignore`.
+
+```bash
+npm run format
+npm run format:check
+```
+
+A CI verifica a formatação antes de executar lint, TypeScript, testes e compilação da demonstração.
+
 ## Arquivos principais
 
 | Arquivo | Função |
