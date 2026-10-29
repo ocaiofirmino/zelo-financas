@@ -5,12 +5,12 @@ import ExportStatement from "./export-statement";
 import CardsPage from "./cards";
 import TransactionScopeControl from "./transaction-scope";
 import {
+  changedTransactionFields,
   editableTransactionFields,
   planLegacyLink,
   planTransactionEdit,
   transactionTargets,
   validateEditFields,
-  type TransactionField,
   type TransactionScope,
 } from "@/lib/transaction-batch";
 import {
@@ -277,7 +277,6 @@ export default function FinanceApp({
   const cardMutation = useRef(false);
   const [entryScope, setEntryScope] = useState<TransactionScope>("single");
   const [deleteScope, setDeleteScope] = useState<TransactionScope>("single");
-  const [editedFields, setEditedFields] = useState<TransactionField[]>([]);
   const [query, setQuery] = useState(""),
     [typeFilter, setTypeFilter] = useState("all"),
     [statusFilter, setStatusFilter] = useState("all"),
@@ -369,7 +368,6 @@ export default function FinanceApp({
           return;
         setEditing(null);
         setEntryScope("single");
-        setEditedFields([]);
         rememberDialogFocus();
         setDraft(blankDraft(month));
         setFormError("");
@@ -416,7 +414,6 @@ export default function FinanceApp({
     if (previewOnly || busy || (!demo && !loaded)) return;
     rememberDialogFocus();
     setEntryScope("single");
-    setEditedFields([]);
     setEditing(row || null);
     setDraft(
       row
@@ -435,15 +432,6 @@ export default function FinanceApp({
     );
     setFormError("");
     setEntryOpen(true);
-  }
-  function changeDraft(next: Draft) {
-    if (editing) {
-      const changed = editableTransactionFields.filter(
-        (field) => draft[field] !== next[field],
-      );
-      setEditedFields((current) => [...new Set([...current, ...changed])]);
-    }
-    setDraft(next);
   }
   function openPlan() {
     if (previewOnly || busy || (!demo && !loaded)) return;
@@ -484,7 +472,7 @@ export default function FinanceApp({
         const fields =
           entryScope === "single"
             ? [...editableTransactionFields]
-            : validateEditFields(editedFields);
+            : validateEditFields(changedTransactionFields(value, editing));
         const updated = demo
           ? planTransactionEdit(
               allRows,
@@ -1126,7 +1114,6 @@ export default function FinanceApp({
                       rememberDialogFocus();
                       setEditing(null);
                       setEntryScope("single");
-                      setEditedFields([]);
                       setDraft(blankDraft(month));
                       setFormError("");
                       setEntryOpen(true);
@@ -1717,7 +1704,7 @@ export default function FinanceApp({
                   disabled={!!editing && editing.installments > 1}
                   onChange={(e) => {
                     const type = e.target.value as Draft["type"];
-                    changeDraft({
+                    setDraft({
                       ...draft,
                       type,
                       category: type === "income" ? "Salário" : "Alimentação",
@@ -1736,7 +1723,7 @@ export default function FinanceApp({
                 <select
                   value={draft.status}
                   onChange={(e) =>
-                    changeDraft({
+                    setDraft({
                       ...draft,
                       status: e.target.value as Draft["status"],
                     })
@@ -1762,7 +1749,7 @@ export default function FinanceApp({
                 }
                 value={draft.description}
                 onChange={(e) =>
-                  changeDraft({ ...draft, description: e.target.value })
+                  setDraft({ ...draft, description: e.target.value })
                 }
               />
             </label>
@@ -1779,7 +1766,7 @@ export default function FinanceApp({
                   placeholder="0,00"
                   value={draft.amount}
                   onChange={(e) =>
-                    changeDraft({ ...draft, amount: e.target.value })
+                    setDraft({ ...draft, amount: e.target.value })
                   }
                 />
               </label>
@@ -1796,7 +1783,7 @@ export default function FinanceApp({
                   max="2100-12-31"
                   value={draft.date}
                   onChange={(e) =>
-                    changeDraft({ ...draft, date: e.target.value })
+                    setDraft({ ...draft, date: e.target.value })
                   }
                 />
               </label>
@@ -1807,7 +1794,7 @@ export default function FinanceApp({
                 <select
                   value={draft.category}
                   onChange={(e) =>
-                    changeDraft({ ...draft, category: e.target.value })
+                    setDraft({ ...draft, category: e.target.value })
                   }
                 >
                   {(draft.type === "income"
@@ -1827,7 +1814,7 @@ export default function FinanceApp({
                     (!!editing && editing.installments > 1)
                   }
                   onChange={(e) =>
-                    changeDraft({
+                    setDraft({
                       ...draft,
                       payment: e.target.value as Draft["payment"],
                       cardId:
@@ -1854,7 +1841,7 @@ export default function FinanceApp({
                   required={!editing}
                   value={draft.cardId}
                   onChange={(e) =>
-                    changeDraft({ ...draft, cardId: e.target.value })
+                    setDraft({ ...draft, cardId: e.target.value })
                   }
                 >
                   <option value="">
@@ -1887,7 +1874,7 @@ export default function FinanceApp({
                   <select
                     value={draft.installments}
                     onChange={(e) =>
-                      changeDraft({
+                      setDraft({
                         ...draft,
                         installments: Number(e.target.value),
                       })

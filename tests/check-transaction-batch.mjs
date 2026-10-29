@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { makeTransactions, validateTransaction } from "../lib/finance.ts";
 import {
   MAX_BULK_LINK,
+  changedTransactionFields,
   planLegacyLink,
   planTransactionEdit,
   transactionTargets,
@@ -30,6 +31,8 @@ const input = validateTransaction({
   cardId: card.id,
 });
 const rows = makeTransactions(input, card);
+const noChange = validateTransaction({ ...rows[0], installments: 1 });
+assert.deepEqual(changedTransactionFields(noChange, rows[0]), []);
 const before = JSON.stringify(rows);
 assert.equal(transactionTargets(rows, rows[1].id, "single").length, 1);
 assert.equal(transactionTargets(rows, rows[1].id, "following").length, 2);

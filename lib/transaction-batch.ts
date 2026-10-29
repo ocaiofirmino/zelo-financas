@@ -46,6 +46,18 @@ export function transactionTargets(
     .sort((a, b) => a.installment - b.installment);
 }
 
+export function changedTransactionFields(
+  value: ReturnType<typeof validateTransaction>,
+  original: Transaction,
+): TransactionField[] {
+  return editableTransactionFields.filter((field) => {
+    if (field === "cardId") {
+      return value.cardId !== (original.cardId ?? null);
+    }
+    return value[field] !== original[field];
+  });
+}
+
 export function validateEditFields(value: unknown): TransactionField[] {
   if (
     !Array.isArray(value) ||
