@@ -4,7 +4,15 @@ import { useRouter } from "next/navigation";
 import ExportStatement from "./export-statement";
 import CardsPage from "./cards";
 import TransactionScopeControl from "./transaction-scope";
-import { editableTransactionFields, planLegacyLink, planTransactionEdit, transactionTargets, validateEditFields, type TransactionField, type TransactionScope } from "@/lib/transaction-batch";
+import {
+  editableTransactionFields,
+  planLegacyLink,
+  planTransactionEdit,
+  transactionTargets,
+  validateEditFields,
+  type TransactionField,
+  type TransactionScope,
+} from "@/lib/transaction-batch";
 import {
   demoCards,
   invoiceDueDate,
@@ -127,17 +135,70 @@ function demoData() {
         status: "pending" as const,
       })),
     );
-  const past = getDemo(shiftMonth(month, -1)).map((row) => ({ ...row, installment: row.installments > 1 ? Math.max(1, row.installment - 1) : row.installment }));
+  const past = getDemo(shiftMonth(month, -1)).map((row) => ({
+    ...row,
+    installment:
+      row.installments > 1 ? Math.max(1, row.installment - 1) : row.installment,
+  }));
   const mapped = [...current, ...past, ...future].map((row) => {
-    const card = row.payment === "card" ? demoCards[row.description === "Celular" || row.description === "Tênis" ? 1 : 0] : null;
-    return { ...row, cardId: card?.id ?? null, date: card ? invoiceDueDate(row.date.slice(0, 7), card.dueDay) : row.date, groupId: row.installments > 1 ? `demo-purchase-${row.description}` : null };
+    const card =
+      row.payment === "card"
+        ? demoCards[
+            row.description === "Celular" || row.description === "Tênis" ? 1 : 0
+          ]
+        : null;
+    return {
+      ...row,
+      cardId: card?.id ?? null,
+      date: card ? invoiceDueDate(row.date.slice(0, 7), card.dueDay) : row.date,
+      groupId: row.installments > 1 ? `demo-purchase-${row.description}` : null,
+    };
   });
-  const base = { ...current[0], type: "expense" as const, category: "Compras", payment: "card" as const, cardId: null, purchaseDate: null, installment: 1, installments: 1, groupId: null };
+  const base = {
+    ...current[0],
+    type: "expense" as const,
+    category: "Compras",
+    payment: "card" as const,
+    cardId: null,
+    purchaseDate: null,
+    installment: 1,
+    installments: 1,
+    groupId: null,
+  };
   const legacy: Transaction[] = [
-    { ...base, id: "demo-legacy-paper", description: "Compra antiga - papelaria", amount: 8500, date: month + "-08", status: "paid" },
-    { ...base, id: "demo-legacy-subscription", description: "Assinatura antiga", amount: 4900, date: month + "-12", status: "pending" },
-    { ...base, id: "demo-legacy-market", description: "Mercado do bairro", amount: 14780, date: month + "-18", status: "paid" },
-    { ...base, id: "demo-archived-history", description: "Compra no cartão antigo", amount: 7200, date: shiftMonth(month, -1) + "-28", status: "paid", cardId: demoCards[2].id },
+    {
+      ...base,
+      id: "demo-legacy-paper",
+      description: "Compra antiga - papelaria",
+      amount: 8500,
+      date: month + "-08",
+      status: "paid",
+    },
+    {
+      ...base,
+      id: "demo-legacy-subscription",
+      description: "Assinatura antiga",
+      amount: 4900,
+      date: month + "-12",
+      status: "pending",
+    },
+    {
+      ...base,
+      id: "demo-legacy-market",
+      description: "Mercado do bairro",
+      amount: 14780,
+      date: month + "-18",
+      status: "paid",
+    },
+    {
+      ...base,
+      id: "demo-archived-history",
+      description: "Compra no cartão antigo",
+      amount: 7200,
+      date: shiftMonth(month, -1) + "-28",
+      status: "paid",
+      cardId: demoCards[2].id,
+    },
   ];
   return [...mapped, ...legacy];
 }
@@ -377,7 +438,9 @@ export default function FinanceApp({
   }
   function changeDraft(next: Draft) {
     if (editing) {
-      const changed = editableTransactionFields.filter((field) => draft[field] !== next[field]);
+      const changed = editableTransactionFields.filter(
+        (field) => draft[field] !== next[field],
+      );
       setEditedFields((current) => [...new Set([...current, ...changed])]);
     }
     setDraft(next);
@@ -415,15 +478,35 @@ export default function FinanceApp({
         throw new Error("Escolha um cartão para esta compra.");
       if (!demo && !loaded)
         throw new Error("Carregue seus dados antes de salvar.");
-      if (!editing && card?.archived) throw new Error("Restaure o cartão antes de registrar novas compras.");
+      if (!editing && card?.archived)
+        throw new Error("Restaure o cartão antes de registrar novas compras.");
       if (editing) {
-        const fields = entryScope === "single" ? [...editableTransactionFields] : validateEditFields(editedFields);
+        const fields =
+          entryScope === "single"
+            ? [...editableTransactionFields]
+            : validateEditFields(editedFields);
         const updated = demo
-          ? planTransactionEdit(allRows, editing.id, value, entryScope, fields, cards)
-          : (await api("PATCH", { ...value, id: editing.id, scope: entryScope, fields })).transactions;
+          ? planTransactionEdit(
+              allRows,
+              editing.id,
+              value,
+              entryScope,
+              fields,
+              cards,
+            )
+          : (
+              await api("PATCH", {
+                ...value,
+                id: editing.id,
+                scope: entryScope,
+                fields,
+              })
+            ).transactions;
         const byId = new Map(updated.map((row) => [row.id, row]));
         setData(allRows.map((row) => byId.get(row.id) ?? row));
-        setNotice(`${updated.length} ${updated.length === 1 ? "lançamento atualizado" : "lançamentos atualizados"}.`);
+        setNotice(
+          `${updated.length} ${updated.length === 1 ? "lançamento atualizado" : "lançamentos atualizados"}.`,
+        );
       } else {
         const added = demo
           ? makeTransactions(value, card)
@@ -456,7 +539,13 @@ export default function FinanceApp({
     try {
       const input = validateCard(value);
       const card = demo
-        ? { ...input, id: id ?? crypto.randomUUID(), archived: id ? cards.find((card) => card.id === id)?.archived ?? false : false }
+        ? {
+            ...input,
+            id: id ?? crypto.randomUUID(),
+            archived: id
+              ? (cards.find((card) => card.id === id)?.archived ?? false)
+              : false,
+          }
         : (
             await api(
               id ? "PATCH" : "POST",
@@ -501,30 +590,51 @@ export default function FinanceApp({
     }
   }
   async function archiveCard(id: string, archived: boolean) {
-    if (previewOnly || busy || cardMutation.current || (!demo && !loaded)) throw new Error("Aguarde o carregamento dos seus dados.");
+    if (previewOnly || busy || cardMutation.current || (!demo && !loaded))
+      throw new Error("Aguarde o carregamento dos seus dados.");
     const current = cards.find((card) => card.id === id);
     if (!current) throw new Error("Cartão não encontrado.");
     cardMutation.current = true;
     setBusy(true);
     try {
-      const next = demo ? { ...current, archived } : (await api("PATCH", { id, archived }, "cards")).card;
-      const update = (rows: PersonalCard[]) => rows.map((card) => card.id === id ? next : card);
-      if (demo) setExampleCards(update); else setSavedCards(update);
-      setNotice(archived ? "Cartão arquivado. O histórico continua disponível." : "Cartão restaurado.");
-    } finally { cardMutation.current = false; setBusy(false); }
+      const next = demo
+        ? { ...current, archived }
+        : (await api("PATCH", { id, archived }, "cards")).card;
+      const update = (rows: PersonalCard[]) =>
+        rows.map((card) => (card.id === id ? next : card));
+      if (demo) setExampleCards(update);
+      else setSavedCards(update);
+      setNotice(
+        archived
+          ? "Cartão arquivado. O histórico continua disponível."
+          : "Cartão restaurado.",
+      );
+    } finally {
+      cardMutation.current = false;
+      setBusy(false);
+    }
   }
   async function linkPurchases(ids: string[], cardId: string) {
-    if (previewOnly || busy || cardMutation.current || (!demo && !loaded)) throw new Error("Aguarde o carregamento dos seus dados.");
+    if (previewOnly || busy || cardMutation.current || (!demo && !loaded))
+      throw new Error("Aguarde o carregamento dos seus dados.");
     const card = cards.find((item) => item.id === cardId);
     if (!card) throw new Error("Escolha um cartão ativo.");
     cardMutation.current = true;
     setBusy(true);
     try {
-      const updated = demo ? planLegacyLink(allRows, ids, card) : (await api("PATCH", { action: "link-card", ids, cardId })).transactions;
+      const updated = demo
+        ? planLegacyLink(allRows, ids, card)
+        : (await api("PATCH", { action: "link-card", ids, cardId }))
+            .transactions;
       const byId = new Map(updated.map((row) => [row.id, row]));
       setData(allRows.map((row) => byId.get(row.id) ?? row));
-      setNotice(`${updated.length} ${updated.length === 1 ? "compra vinculada" : "compras vinculadas"} a ${card.name}.`);
-    } finally { cardMutation.current = false; setBusy(false); }
+      setNotice(
+        `${updated.length} ${updated.length === 1 ? "compra vinculada" : "compras vinculadas"} a ${card.name}.`,
+      );
+    } finally {
+      cardMutation.current = false;
+      setBusy(false);
+    }
   }
   async function toggleStatus(row: Transaction, animate = false) {
     if (previewOnly || busy || (!demo && !loaded)) return;
@@ -561,11 +671,18 @@ export default function FinanceApp({
     setBusy(true);
     setFormError("");
     try {
-      const ids = demo ? transactionTargets(allRows, deleteEntry.id, deleteScope).map((row) => row.id) : (await api("DELETE", { id: deleteEntry.id, scope: deleteScope })).deletedIds;
+      const ids = demo
+        ? transactionTargets(allRows, deleteEntry.id, deleteScope).map(
+            (row) => row.id,
+          )
+        : (await api("DELETE", { id: deleteEntry.id, scope: deleteScope }))
+            .deletedIds;
       const removed = new Set(ids);
       setData(allRows.filter((row) => !removed.has(row.id)));
       setDeleteEntry(null);
-      setNotice(`${ids.length} ${ids.length === 1 ? "lançamento excluído" : "lançamentos excluídos"}.`);
+      setNotice(
+        `${ids.length} ${ids.length === 1 ? "lançamento excluído" : "lançamentos excluídos"}.`,
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Não foi possível excluir.",
@@ -1008,8 +1125,8 @@ export default function FinanceApp({
                     onClick={() => {
                       rememberDialogFocus();
                       setEditing(null);
-        setEntryScope("single");
-        setEditedFields([]);
+                      setEntryScope("single");
+                      setEditedFields([]);
                       setDraft(blankDraft(month));
                       setFormError("");
                       setEntryOpen(true);
@@ -1582,7 +1699,16 @@ export default function FinanceApp({
                 : "Registre o que entrou ou saiu, com a data correspondente."}
           </DialogDescription>
           <form onSubmit={saveEntry} className="finance-form">
-            {editing && <TransactionScopeControl anchor={editing} rows={allRows} scope={entryScope} onChange={setEntryScope} action="edit" disabled={busy} />}
+            {editing && (
+              <TransactionScopeControl
+                anchor={editing}
+                rows={allRows}
+                scope={entryScope}
+                onChange={setEntryScope}
+                action="edit"
+                disabled={busy}
+              />
+            )}
             <div className="field-pair">
               <label>
                 Tipo
@@ -1644,7 +1770,9 @@ export default function FinanceApp({
               <label>
                 {draft.installments > 1 && !editing
                   ? "Valor total da compra (R$)"
-                  : editing && entryScope !== "single" ? "Valor por parcela (R$)" : "Valor (R$)"}
+                  : editing && entryScope !== "single"
+                    ? "Valor por parcela (R$)"
+                    : "Valor (R$)"}
                 <input
                   inputMode="decimal"
                   required
@@ -1667,7 +1795,9 @@ export default function FinanceApp({
                   min="2000-01-01"
                   max="2100-12-31"
                   value={draft.date}
-                  onChange={(e) => changeDraft({ ...draft, date: e.target.value })}
+                  onChange={(e) =>
+                    changeDraft({ ...draft, date: e.target.value })
+                  }
                 />
               </label>
             </div>
@@ -1702,7 +1832,9 @@ export default function FinanceApp({
                       payment: e.target.value as Draft["payment"],
                       cardId:
                         e.target.value === "card"
-                          ? draft.cardId || cards.find((card) => !card.archived)?.id || ""
+                          ? draft.cardId ||
+                            cards.find((card) => !card.archived)?.id ||
+                            ""
                           : "",
                       status:
                         e.target.value === "card" ? "pending" : draft.status,
@@ -1728,15 +1860,21 @@ export default function FinanceApp({
                   <option value="">
                     {editing ? "Sem cartão vinculado" : "Selecione um cartão"}
                   </option>
-                  {cards.filter((card) => !card.archived || card.id === editing?.cardId).map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.name}{card.archived ? " (arquivado)" : ""}
-                    </option>
-                  ))}
+                  {cards
+                    .filter(
+                      (card) => !card.archived || card.id === editing?.cardId,
+                    )
+                    .map((card) => (
+                      <option key={card.id} value={card.id}>
+                        {card.name}
+                        {card.archived ? " (arquivado)" : ""}
+                      </option>
+                    ))}
                 </select>
                 {!cards.some((card) => !card.archived) && !editing && (
                   <span className="form-note">
-                    Cadastre ou restaure um cartão na tela Cartões antes de registrar a compra.
+                    Cadastre ou restaure um cartão na tela Cartões antes de
+                    registrar a compra.
                   </span>
                 )}
               </label>
@@ -1772,8 +1910,8 @@ export default function FinanceApp({
             )}
             {editing && editing.installments > 1 && (
               <p className="form-note">
-                Parcela {editing.installment} de {editing.installments}.
-                O alcance da edição segue a seleção acima.
+                Parcela {editing.installment} de {editing.installments}. O
+                alcance da edição segue a seleção acima.
               </p>
             )}
             {formError && (
@@ -1864,9 +2002,17 @@ export default function FinanceApp({
           <DialogDescription>
             {deleteEntry?.description} · {money(deleteEntry?.amount || 0)}. A
             exclusão altera os totais do mês.
-
           </DialogDescription>
-          {deleteEntry && <TransactionScopeControl anchor={deleteEntry} rows={allRows} scope={deleteScope} onChange={setDeleteScope} action="delete" disabled={busy} />}
+          {deleteEntry && (
+            <TransactionScopeControl
+              anchor={deleteEntry}
+              rows={allRows}
+              scope={deleteScope}
+              onChange={setDeleteScope}
+              action="delete"
+              disabled={busy}
+            />
+          )}
           {formError && (
             <p className="form-error" role="alert">
               {formError}

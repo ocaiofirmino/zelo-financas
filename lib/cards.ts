@@ -126,5 +126,12 @@ export const demoCards: CreditCard[] = [
     dueDay: 20,
     archived: false,
   },
-  { id: "demo-card-antigo", name: "Cartão antigo", creditLimit: 200000, closingDay: 20, dueDay: 28, archived: true },
+  {
+    id: "demo-card-antigo",
+    name: "Cartão antigo",
+    creditLimit: 200000,
+    closingDay: 20,
+    dueDay: 28,
+    archived: true,
+  },
 ];

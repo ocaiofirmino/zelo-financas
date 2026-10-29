@@ -25,7 +25,12 @@ export async function GET() {
       )
       .bind(user.userId)
       .all();
-    return json({ cards: cards.results.map((card) => ({ ...card, archived: Boolean(card.archived) })) });
+    return json({
+      cards: cards.results.map((card) => ({
+        ...card,
+        archived: Boolean(card.archived),
+      })),
+    });
   } catch (error) {
     console.error("Cards storage error", error);
     return json({ error: "Não foi possível carregar seus cartões." }, 503);
@@ -59,7 +64,14 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
     )
       throw new Error("Cartão inválido.");
     if (data.archived !== undefined) {
-      if (method !== "PATCH" || typeof data.archived !== "boolean" || ["name", "creditLimit", "closingDay", "dueDay"].some((key) => data[key] !== undefined)) throw new Error("Confira a operação de arquivamento do cartão.");
+      if (
+        method !== "PATCH" ||
+        typeof data.archived !== "boolean" ||
+        ["name", "creditLimit", "closingDay", "dueDay"].some(
+          (key) => data[key] !== undefined,
+        )
+      )
+        throw new Error("Confira a operação de arquivamento do cartão.");
       archiveOnly = true;
     }
     if (method !== "DELETE" && !archiveOnly) card = validateCard(data);
@@ -101,8 +113,14 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
       .first();
     if (!old) return json({ error: "Cartão não encontrado." }, 404);
     if (archiveOnly) {
-      const result = await db.prepare("UPDATE credit_cards SET archived = ? WHERE id = ? AND userId = ?").bind(data.archived ? 1 : 0, data.id, user.userId).run();
-      if (!result.meta.changes) return json({ error: "Cartão não encontrado." }, 404);
+      const result = await db
+        .prepare(
+          "UPDATE credit_cards SET archived = ? WHERE id = ? AND userId = ?",
+        )
+        .bind(data.archived ? 1 : 0, data.id, user.userId)
+        .run();
+      if (!result.meta.changes)
+        return json({ error: "Cartão não encontrado." }, 404);
       return json({ card: { ...old, archived: data.archived } });
     }
     if (method === "PATCH") {
@@ -121,7 +139,9 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
         .run();
       if (!result.meta.changes)
         return json({ error: "Cartão não encontrado." }, 404);
-      return json({ card: { ...card!, id: data.id, archived: Boolean(old.archived) } });
+      return json({
+        card: { ...card!, id: data.id, archived: Boolean(old.archived) },
+      });
     }
     const result = await db
       .prepare(
