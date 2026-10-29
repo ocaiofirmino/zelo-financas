@@ -27,6 +27,8 @@ const fixtures = Object.freeze([
     installment: 3,
     installments: 3,
     groupId: "grupo-notebook",
+    cardId: "cartao-compras",
+    purchaseDate: "2026-09-15",
   }),
   transaction("tx-d", 12345, "2026-10-04", "income", "pending"),
   transaction("tx-c", 33334, "2026-10-03", "expense", "paid", {
@@ -34,6 +36,8 @@ const fixtures = Object.freeze([
     installment: 1,
     installments: 3,
     groupId: "grupo-notebook",
+    cardId: "cartao-compras",
+    purchaseDate: "2026-09-15",
     description: 'Notebook; "Edição"\nportátil á',
   }),
   transaction("tx-b", 100001, "2026-10-02", "income", "paid", {
@@ -45,6 +49,8 @@ const fixtures = Object.freeze([
     installment: 2,
     installments: 3,
     groupId: "grupo-notebook",
+    cardId: "cartao-compras",
+    purchaseDate: "2026-09-15",
   }),
   transaction("tx-e", 6789, "2026-10-05", "expense", "pending"),
   transaction("tx-a", 1, "2026-10-02", "expense", "paid"),
@@ -105,6 +111,15 @@ function parseCsv(bytes, delimiter) {
 const build = (format, overrides = {}) =>
   buildFinanceExport({
     transactions: fixtures,
+    cards: [
+      {
+        id: "cartao-compras",
+        name: "Compras",
+        creditLimit: 500000,
+        closingDay: 20,
+        dueDay: 3,
+      },
+    ],
     month: "2026-10",
     scope: "month",
     format,
@@ -123,6 +138,9 @@ assert.deepEqual(
 );
 assert.equal(human.objects[2]["Descrição"], 'Notebook; "Edição"\nportátil á');
 assert.equal(human.objects[2]["Grupo"], "grupo-notebook");
+assert.equal(human.objects[2]["Cartão ID"], "cartao-compras");
+assert.equal(human.objects[2]["Cartão"], "Compras");
+assert.equal(human.objects[2]["Data da compra"], "2026-09-15");
 assert.equal(human.objects[2]["Data"], "03/10/2026");
 assert.equal(human.objects[2]["Competência"], "2026-10");
 assert.equal(human.objects[2]["Parcela"], "1");
@@ -263,7 +281,10 @@ assert.equal(statement.getCell("B4").value, "grupo-notebook");
 assert.equal(statement.getCell("J4").value, 1);
 assert.equal(statement.getCell("K4").value, 3);
 assert.equal(statement.views[0].ySplit, 1);
-assert.equal(statement.autoFilter, "A1:N8");
+assert.equal(statement.autoFilter, "A1:Q8");
+assert.equal(statement.getCell("O4").value, "cartao-compras");
+assert.equal(statement.getCell("P4").value, "Compras");
+assert.equal(statement.getCell("Q4").value, "2026-09-15");
 
 for (const format of ["csv", "bi", "xlsx"]) {
   const emptyExport = await build(format, { transactions: [] });

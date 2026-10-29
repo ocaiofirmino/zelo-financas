@@ -2,6 +2,24 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ExportStatement from "./export-statement";
+import CardsPage from "./cards";
+import TransactionScopeControl from "./transaction-scope";
+import {
+  changedTransactionFields,
+  editableTransactionFields,
+  planLegacyLink,
+  planTransactionEdit,
+  transactionTargets,
+  validateEditFields,
+  type TransactionScope,
+} from "@/lib/transaction-batch";
+import {
+  demoCards,
+  invoiceDueDate,
+  validateCard,
+  type CardInput,
+  type CreditCard as PersonalCard,
+} from "@/lib/cards";
 import { PERSONAL_ACCOUNTS_ENABLED } from "@/lib/app-access";
 import SiteFooter from "./site-footer";
 import {
@@ -82,11 +100,12 @@ type Draft = {
   payment: "pix" | "card";
   status: "paid" | "pending";
   installments: number;
+  cardId: string;
 };
 const nav = [
   { view: "overview" as View, label: "Meu mês", icon: LayoutDashboard },
   { view: "transactions" as View, label: "Lançamentos", icon: ReceiptText },
-  { view: "cards" as View, label: "Cartão", icon: CreditCard },
+  { view: "cards" as View, label: "Cartões", icon: CreditCard },
   { view: "savings" as View, label: "Cofrinhos", icon: PiggyBank },
   {
     view: "statement" as View,
@@ -97,7 +116,7 @@ const nav = [
 const titles = {
   overview: "Meu mês.",
   transactions: "Lançamentos.",
-  cards: "Cartão e parcelas.",
+  cards: "Cartões e faturas.",
   statement: "Demonstrativo do mês.",
   savings: "Meus cofrinhos.",
   profile: "Meu perfil.",
@@ -116,7 +135,72 @@ function demoData() {
         status: "pending" as const,
       })),
     );
-  return [...current, ...getDemo(shiftMonth(month, -1)), ...future];
+  const past = getDemo(shiftMonth(month, -1)).map((row) => ({
+    ...row,
+    installment:
+      row.installments > 1 ? Math.max(1, row.installment - 1) : row.installment,
+  }));
+  const mapped = [...current, ...past, ...future].map((row) => {
+    const card =
+      row.payment === "card"
+        ? demoCards[
+            row.description === "Celular" || row.description === "Tênis" ? 1 : 0
+          ]
+        : null;
+    return {
+      ...row,
+      cardId: card?.id ?? null,
+      date: card ? invoiceDueDate(row.date.slice(0, 7), card.dueDay) : row.date,
+      groupId: row.installments > 1 ? `demo-purchase-${row.description}` : null,
+    };
+  });
+  const base = {
+    ...current[0],
+    type: "expense" as const,
+    category: "Compras",
+    payment: "card" as const,
+    cardId: null,
+    purchaseDate: null,
+    installment: 1,
+    installments: 1,
+    groupId: null,
+  };
+  const legacy: Transaction[] = [
+    {
+      ...base,
+      id: "demo-legacy-paper",
+      description: "Compra antiga - papelaria",
+      amount: 8500,
+      date: month + "-08",
+      status: "paid",
+    },
+    {
+      ...base,
+      id: "demo-legacy-subscription",
+      description: "Assinatura antiga",
+      amount: 4900,
+      date: month + "-12",
+      status: "pending",
+    },
+    {
+      ...base,
+      id: "demo-legacy-market",
+      description: "Mercado do bairro",
+      amount: 14780,
+      date: month + "-18",
+      status: "paid",
+    },
+    {
+      ...base,
+      id: "demo-archived-history",
+      description: "Compra no cartão antigo",
+      amount: 7200,
+      date: shiftMonth(month, -1) + "-28",
+      status: "paid",
+      cardId: demoCards[2].id,
+    },
+  ];
+  return [...mapped, ...legacy];
 }
 function blankDraft(month: string): Draft {
   return {
@@ -128,6 +212,7 @@ function blankDraft(month: string): Draft {
     payment: "pix",
     status: "paid",
     installments: 1,
+    cardId: "",
   };
 }
 type ApiResult = {
@@ -135,9 +220,17 @@ type ApiResult = {
   transactions: Transaction[];
   settings: Record<string, Settings>;
   transaction: Transaction;
+  cards: PersonalCard[];
+  card: PersonalCard;
+  deletedIds: string[];
+  count: number;
 };
-async function api(method: string, data?: unknown) {
-  const response = await fetch("/api/finance", {
+async function api(
+  method: string,
+  data?: unknown,
+  resource: "finance" | "cards" = "finance",
+) {
+  const response = await fetch("/api/" + resource, {
     method,
     headers: { "Content-Type": "application/json" },
     body: data === undefined ? undefined : JSON.stringify(data),
@@ -176,6 +269,14 @@ export default function FinanceApp({
     [busy, setBusy] = useState(false),
     [leavingId, setLeavingId] = useState<string | null>(null);
   const [sidebarCompact, setSidebarCompact] = useState(false);
+  const [exampleCards, setExampleCards] = useState<PersonalCard[]>(() => [
+    ...demoCards,
+  ]);
+  const [savedCards, setSavedCards] = useState<PersonalCard[]>([]);
+  const cards = demo ? exampleCards : savedCards;
+  const cardMutation = useRef(false);
+  const [entryScope, setEntryScope] = useState<TransactionScope>("single");
+  const [deleteScope, setDeleteScope] = useState<TransactionScope>("single");
   const [query, setQuery] = useState(""),
     [typeFilter, setTypeFilter] = useState("all"),
     [statusFilter, setStatusFilter] = useState("all"),
@@ -228,6 +329,7 @@ export default function FinanceApp({
       const data = await api("GET");
       setSavedRows(data.transactions);
       setSavedSettings(data.settings);
+      setSavedCards(data.cards);
       setLoaded(true);
     } catch (error) {
       setLoadError(
@@ -265,6 +367,7 @@ export default function FinanceApp({
         )
           return;
         setEditing(null);
+        setEntryScope("single");
         rememberDialogFocus();
         setDraft(blankDraft(month));
         setFormError("");
@@ -307,9 +410,10 @@ export default function FinanceApp({
     if (demo) setExampleRows(next);
     else setSavedRows(next);
   }
-  function openEntry(row?: Transaction) {
+  function openEntry(row?: Transaction, cardId?: string) {
     if (previewOnly || busy || (!demo && !loaded)) return;
     rememberDialogFocus();
+    setEntryScope("single");
     setEditing(row || null);
     setDraft(
       row
@@ -317,8 +421,14 @@ export default function FinanceApp({
             ...row,
             amount: (row.amount / 100).toFixed(2).replace(".", ","),
             installments: 1,
+            cardId: row.cardId ?? "",
           }
-        : blankDraft(month),
+        : {
+            ...blankDraft(month),
+            ...(cardId
+              ? { cardId, payment: "card" as const, status: "pending" as const }
+              : {}),
+          },
     );
     setFormError("");
     setEntryOpen(true);
@@ -346,22 +456,51 @@ export default function FinanceApp({
       const value = validateTransaction({
         ...draft,
         amount: parseAmount(draft.amount),
+        cardId: draft.payment === "card" ? draft.cardId || null : null,
       });
+      const card = cards.find((item) => item.id === value.cardId);
+      if (
+        value.payment === "card" &&
+        ((!editing && !card) || (value.cardId && !card))
+      )
+        throw new Error("Escolha um cartão para esta compra.");
       if (!demo && !loaded)
         throw new Error("Carregue seus dados antes de salvar.");
+      if (!editing && card?.archived)
+        throw new Error("Restaure o cartão antes de registrar novas compras.");
       if (editing) {
+        const fields =
+          entryScope === "single"
+            ? [...editableTransactionFields]
+            : validateEditFields(changedTransactionFields(value, editing));
         const updated = demo
-          ? { ...editing, ...value, installments: editing.installments }
-          : (await api("PATCH", { ...value, id: editing.id })).transaction;
-        setData(allRows.map((r) => (r.id === editing.id ? updated : r)));
+          ? planTransactionEdit(
+              allRows,
+              editing.id,
+              value,
+              entryScope,
+              fields,
+              cards,
+            )
+          : (
+              await api("PATCH", {
+                ...value,
+                id: editing.id,
+                scope: entryScope,
+                fields,
+              })
+            ).transactions;
+        const byId = new Map(updated.map((row) => [row.id, row]));
+        setData(allRows.map((row) => byId.get(row.id) ?? row));
         setNotice(
-          demo ? "Lançamento de teste atualizado." : "Lançamento atualizado.",
+          `${updated.length} ${updated.length === 1 ? "lançamento atualizado" : "lançamentos atualizados"}.`,
         );
       } else {
         const added = demo
-          ? makeTransactions(value)
+          ? makeTransactions(value, card)
           : (await api("POST", value)).transactions;
         setData([...allRows, ...added]);
+        setMonth(added[0].date.slice(0, 7));
         setNotice(
           demo
             ? "Lançamento de teste adicionado."
@@ -370,13 +509,118 @@ export default function FinanceApp({
               : "Lançamento salvo.",
         );
       }
-      setMonth(value.date.slice(0, 7));
+      if (editing) setMonth(value.date.slice(0, 7));
       setEntryOpen(false);
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Confira os dados.",
       );
     } finally {
+      setBusy(false);
+    }
+  }
+  async function saveCard(value: CardInput, id?: string) {
+    if (previewOnly || busy || cardMutation.current || (!demo && !loaded))
+      throw new Error("Aguarde o carregamento dos seus dados.");
+    cardMutation.current = true;
+    setBusy(true);
+    try {
+      const input = validateCard(value);
+      const card = demo
+        ? {
+            ...input,
+            id: id ?? crypto.randomUUID(),
+            archived: id
+              ? (cards.find((card) => card.id === id)?.archived ?? false)
+              : false,
+          }
+        : (
+            await api(
+              id ? "PATCH" : "POST",
+              { ...input, ...(id ? { id } : {}) },
+              "cards",
+            )
+          ).card;
+      const update = (current: PersonalCard[]) =>
+        id
+          ? current.map((item) => (item.id === id ? card : item))
+          : [...current, card];
+      if (demo) setExampleCards(update);
+      else setSavedCards(update);
+      setNotice(
+        id
+          ? "Cartão atualizado. Os vencimentos existentes foram preservados."
+          : "Cartão cadastrado.",
+      );
+    } finally {
+      cardMutation.current = false;
+      setBusy(false);
+    }
+  }
+  async function deleteCard(id: string) {
+    if (previewOnly || busy || cardMutation.current || (!demo && !loaded))
+      throw new Error("Aguarde o carregamento dos seus dados.");
+    if (allRows.some((row) => row.cardId === id))
+      throw new Error(
+        "Este cartão possui compras. Desvincule os lançamentos antes de excluir.",
+      );
+    cardMutation.current = true;
+    setBusy(true);
+    try {
+      if (!demo) await api("DELETE", { id }, "cards");
+      if (demo)
+        setExampleCards((current) => current.filter((card) => card.id !== id));
+      else setSavedCards((current) => current.filter((card) => card.id !== id));
+      setNotice("Cartão excluído.");
+    } finally {
+      cardMutation.current = false;
+      setBusy(false);
+    }
+  }
+  async function archiveCard(id: string, archived: boolean) {
+    if (previewOnly || busy || cardMutation.current || (!demo && !loaded))
+      throw new Error("Aguarde o carregamento dos seus dados.");
+    const current = cards.find((card) => card.id === id);
+    if (!current) throw new Error("Cartão não encontrado.");
+    cardMutation.current = true;
+    setBusy(true);
+    try {
+      const next = demo
+        ? { ...current, archived }
+        : (await api("PATCH", { id, archived }, "cards")).card;
+      const update = (rows: PersonalCard[]) =>
+        rows.map((card) => (card.id === id ? next : card));
+      if (demo) setExampleCards(update);
+      else setSavedCards(update);
+      setNotice(
+        archived
+          ? "Cartão arquivado. O histórico continua disponível."
+          : "Cartão restaurado.",
+      );
+    } finally {
+      cardMutation.current = false;
+      setBusy(false);
+    }
+  }
+  async function linkPurchases(ids: string[], cardId: string) {
+    if (previewOnly || busy || cardMutation.current || (!demo && !loaded))
+      throw new Error("Aguarde o carregamento dos seus dados.");
+    const card = cards.find((item) => item.id === cardId);
+    if (!card) throw new Error("Escolha um cartão ativo.");
+    cardMutation.current = true;
+    setBusy(true);
+    try {
+      const updated = demo
+        ? planLegacyLink(allRows, ids, card)
+        : (await api("PATCH", { action: "link-card", ids, cardId }))
+            .transactions;
+      const byId = new Map(updated.map((row) => [row.id, row]));
+      setData(allRows.map((row) => byId.get(row.id) ?? row));
+      setNotice(
+        `${updated.length} ${updated.length === 1 ? "compra vinculada" : "compras vinculadas"} a ${card.name}.`,
+      );
+    } finally {
+      cardMutation.current = false;
       setBusy(false);
     }
   }
@@ -415,11 +659,17 @@ export default function FinanceApp({
     setBusy(true);
     setFormError("");
     try {
-      if (!demo) await api("DELETE", { id: deleteEntry.id });
-      setData(allRows.filter((r) => r.id !== deleteEntry.id));
+      const ids = demo
+        ? transactionTargets(allRows, deleteEntry.id, deleteScope).map(
+            (row) => row.id,
+          )
+        : (await api("DELETE", { id: deleteEntry.id, scope: deleteScope }))
+            .deletedIds;
+      const removed = new Set(ids);
+      setData(allRows.filter((row) => !removed.has(row.id)));
       setDeleteEntry(null);
       setNotice(
-        demo ? "Lançamento de teste excluído." : "Lançamento excluído.",
+        `${ids.length} ${ids.length === 1 ? "lançamento excluído" : "lançamentos excluídos"}.`,
       );
     } catch (error) {
       setFormError(
@@ -578,6 +828,7 @@ export default function FinanceApp({
           onClick={() => {
             rememberDialogFocus();
             setFormError("");
+            setDeleteScope("single");
             setDeleteEntry(r);
           }}
         >
@@ -612,7 +863,10 @@ export default function FinanceApp({
                 <td>
                   <strong>{r.description}</strong>
                   <small>
-                    {r.payment === "card" ? "Cartão" : "Pix / débito"}
+                    {r.payment === "card"
+                      ? (cards.find((card) => card.id === r.cardId)?.name ??
+                        "Sem cartão vinculado")
+                      : "Pix / débito"}
                     {r.installments > 1
                       ? " · " + r.installment + "/" + r.installments
                       : ""}
@@ -660,9 +914,6 @@ export default function FinanceApp({
       </div>
     );
   }
-  const futureMonths = Array.from({ length: 6 }, (_, i) =>
-    shiftMonth(month, i + 1),
-  ).filter((value) => value <= "2100-12");
   return (
     <div
       data-view={view}
@@ -793,6 +1044,7 @@ export default function FinanceApp({
               </button>
               <ExportStatement
                 transactions={allRows}
+                cards={cards}
                 month={month}
                 demo={demo}
                 disabled={busy || (!demo && !loaded)}
@@ -861,6 +1113,7 @@ export default function FinanceApp({
                     onClick={() => {
                       rememberDialogFocus();
                       setEditing(null);
+                      setEntryScope("single");
                       setDraft(blankDraft(month));
                       setFormError("");
                       setEntryOpen(true);
@@ -1198,103 +1451,19 @@ export default function FinanceApp({
             </section>
           )}
           {view === "cards" && (
-            <>
-              <div className="card-summary">
-                <div>
-                  <CreditCard size={24} />
-                  <span>Despesas no cartão neste mês</span>
-                  <strong>
-                    {money(
-                      rows
-                        .filter(
-                          (r) => r.payment === "card" && r.type === "expense",
-                        )
-                        .reduce((v, r) => v + r.amount, 0),
-                    )}
-                  </strong>
-                </div>
-                <div>
-                  <span>Do cartão, ainda a pagar no mês</span>
-                  <strong>
-                    {money(
-                      rows
-                        .filter(
-                          (r) =>
-                            r.payment === "card" &&
-                            r.type === "expense" &&
-                            r.status === "pending",
-                        )
-                        .reduce((v, r) => v + r.amount, 0),
-                    )}
-                  </strong>
-                </div>
-                <div>
-                  <span>Compromissos futuros já lançados</span>
-                  <strong>
-                    {money(
-                      allRows
-                        .filter(
-                          (r) =>
-                            r.payment === "card" &&
-                            r.type === "expense" &&
-                            r.status === "pending" &&
-                            r.date.slice(0, 7) > month,
-                        )
-                        .reduce((v, r) => v + r.amount, 0),
-                    )}
-                  </strong>
-                </div>
-              </div>
-              <section className="future-panel">
-                <div className="section-head">
-                  <h2>
-                    {futureMonths.length === 6
-                      ? "Os próximos seis meses"
-                      : "Próximos meses disponíveis"}
-                  </h2>
-                  <span className="mini-label">PARCELAS PREVISTAS</span>
-                </div>
-                <div className="future-months">
-                  {futureMonths.map((m) => {
-                    const value = allRows
-                      .filter(
-                        (r) =>
-                          r.payment === "card" &&
-                          r.type === "expense" &&
-                          r.status === "pending" &&
-                          r.date.slice(0, 7) === m,
-                      )
-                      .reduce((v, r) => v + r.amount, 0);
-                    return (
-                      <button key={m} onClick={() => setMonth(m)}>
-                        <span>{monthTitle(m)}</span>
-                        <strong>{money(value)}</strong>
-                      </button>
-                    );
-                  })}
-                </div>
-                {!futureMonths.length && (
-                  <p className="context-note">
-                    O período de cadastro termina em dezembro de 2100.
-                  </p>
-                )}
-                <p className="context-note">
-                  Valores dos lançamentos cadastrados. O sistema não está
-                  conectado à fatura do banco.
-                </p>
-              </section>
-              <section className="recent-panel">
-                <div className="section-head">
-                  <h2>Cartão em {monthTitle(month)}</h2>
-                  <span className="mini-label">PARCELAS E COMPRAS À VISTA</span>
-                </div>
-                {table(
-                  rows
-                    .filter((r) => r.payment === "card" && r.type === "expense")
-                    .sort((a, b) => a.date.localeCompare(b.date)),
-                )}
-              </section>
-            </>
+            <CardsPage
+              cards={cards}
+              transactions={allRows}
+              month={month}
+              readOnly={previewOnly}
+              disabled={busy || (!demo && !loaded)}
+              onSave={saveCard}
+              onDelete={deleteCard}
+              onArchive={archiveCard}
+              onLink={linkPurchases}
+              onNewPurchase={(cardId) => openEntry(undefined, cardId)}
+              renderTransactions={table}
+            />
           )}
           {view === "statement" && (
             <>
@@ -1502,7 +1671,7 @@ export default function FinanceApp({
         }}
       >
         <DialogContent
-          className="finance-dialog finance-drawer"
+          className="finance-dialog finance-drawer top-0 right-0 left-auto translate-x-0 translate-y-0"
           onCloseAutoFocus={restoreDialogFocus}
         >
           <span className="drawer-kicker">SEU CONTROLE, EM DIA</span>
@@ -1513,10 +1682,20 @@ export default function FinanceApp({
             {demo
               ? "Teste livremente. Este lançamento ficará apenas na demonstração."
               : editing && editing.installments > 1
-                ? "Esta edição altera apenas a parcela selecionada."
+                ? "Escolha quais parcelas deseja alterar."
                 : "Registre o que entrou ou saiu, com a data correspondente."}
           </DialogDescription>
           <form onSubmit={saveEntry} className="finance-form">
+            {editing && (
+              <TransactionScopeControl
+                anchor={editing}
+                rows={allRows}
+                scope={entryScope}
+                onChange={setEntryScope}
+                action="edit"
+                disabled={busy}
+              />
+            )}
             <div className="field-pair">
               <label>
                 Tipo
@@ -1530,6 +1709,7 @@ export default function FinanceApp({
                       type,
                       category: type === "income" ? "Salário" : "Alimentação",
                       payment: "pix",
+                      cardId: "",
                       installments: 1,
                     });
                   }}
@@ -1577,7 +1757,9 @@ export default function FinanceApp({
               <label>
                 {draft.installments > 1 && !editing
                   ? "Valor total da compra (R$)"
-                  : "Valor (R$)"}
+                  : editing && entryScope !== "single"
+                    ? "Valor por parcela (R$)"
+                    : "Valor (R$)"}
                 <input
                   inputMode="decimal"
                   required
@@ -1589,7 +1771,11 @@ export default function FinanceApp({
                 />
               </label>
               <label>
-                {draft.payment === "card" ? "Vencimento / data" : "Data"}
+                {draft.payment === "card"
+                  ? editing
+                    ? "Vencimento da parcela"
+                    : "Data da compra"
+                  : "Data"}
                 <input
                   type="date"
                   required
@@ -1629,6 +1815,14 @@ export default function FinanceApp({
                     setDraft({
                       ...draft,
                       payment: e.target.value as Draft["payment"],
+                      cardId:
+                        e.target.value === "card"
+                          ? draft.cardId ||
+                            cards.find((card) => !card.archived)?.id ||
+                            ""
+                          : "",
+                      status:
+                        e.target.value === "card" ? "pending" : draft.status,
                       installments: 1,
                     })
                   }
@@ -1638,6 +1832,38 @@ export default function FinanceApp({
                 </select>
               </label>
             </div>
+            {draft.payment === "card" && (
+              <label>
+                Cartão da compra
+                <select
+                  required={!editing}
+                  value={draft.cardId}
+                  onChange={(e) =>
+                    setDraft({ ...draft, cardId: e.target.value })
+                  }
+                >
+                  <option value="">
+                    {editing ? "Sem cartão vinculado" : "Selecione um cartão"}
+                  </option>
+                  {cards
+                    .filter(
+                      (card) => !card.archived || card.id === editing?.cardId,
+                    )
+                    .map((card) => (
+                      <option key={card.id} value={card.id}>
+                        {card.name}
+                        {card.archived ? " (arquivado)" : ""}
+                      </option>
+                    ))}
+                </select>
+                {!cards.some((card) => !card.archived) && !editing && (
+                  <span className="form-note">
+                    Cadastre ou restaure um cartão na tela Cartões antes de
+                    registrar a compra.
+                  </span>
+                )}
+              </label>
+            )}
             {draft.type === "expense" &&
               draft.payment === "card" &&
               !editing && (
@@ -1662,15 +1888,15 @@ export default function FinanceApp({
               )}
             {draft.installments > 1 && !editing && (
               <p className="form-note">
-                A data é o vencimento da primeira parcela. As demais serão
-                previstas nos meses seguintes. A situação escolhida vale para a
-                primeira.
+                O primeiro vencimento considera a data da compra e o fechamento
+                do cartão. As demais parcelas entram nas faturas seguintes. A
+                situação escolhida vale para a primeira.
               </p>
             )}
             {editing && editing.installments > 1 && (
               <p className="form-note">
-                Parcela {editing.installment} de {editing.installments}. As
-                outras parcelas mantêm seus valores.
+                Parcela {editing.installment} de {editing.installments}. O
+                alcance da edição segue a seleção acima.
               </p>
             )}
             {formError && (
@@ -1761,10 +1987,17 @@ export default function FinanceApp({
           <DialogDescription>
             {deleteEntry?.description} · {money(deleteEntry?.amount || 0)}. A
             exclusão altera os totais do mês.
-            {deleteEntry && deleteEntry.installments > 1
-              ? " Somente esta parcela será excluída."
-              : ""}
           </DialogDescription>
+          {deleteEntry && (
+            <TransactionScopeControl
+              anchor={deleteEntry}
+              rows={allRows}
+              scope={deleteScope}
+              onChange={setDeleteScope}
+              action="delete"
+              disabled={busy}
+            />
+          )}
           {formError && (
             <p className="form-error" role="alert">
               {formError}
