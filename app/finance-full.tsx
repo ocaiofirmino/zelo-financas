@@ -1782,9 +1782,7 @@ export default function FinanceApp({
                   min="2000-01-01"
                   max="2100-12-31"
                   value={draft.date}
-                  onChange={(e) =>
-                    setDraft({ ...draft, date: e.target.value })
-                  }
+                  onChange={(e) => setDraft({ ...draft, date: e.target.value })}
                 />
               </label>
             </div>
