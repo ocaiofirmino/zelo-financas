@@ -1,18 +1,30 @@
-import { PERSONAL_ACCOUNTS_ENABLED, personalAccessUnavailable } from "@/lib/app-access";
+import {
+  PERSONAL_ACCOUNTS_ENABLED,
+  personalAccessUnavailable,
+} from "@/lib/app-access";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { database } from "@/db/raw";
 import { validateCard } from "@/lib/cards";
 
 export const dynamic = "force-dynamic";
 const columns = "id,name,creditLimit,closingDay,dueDay";
-const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "private, no-store" } });
+const json = (data: unknown, status = 200) =>
+  Response.json(data, {
+    status,
+    headers: { "Cache-Control": "private, no-store" },
+  });
 
 export async function GET() {
   if (!PERSONAL_ACCOUNTS_ENABLED) return personalAccessUnavailable();
   const user = await getChatGPTUser();
   if (!user) return json({ error: "Entre para acessar seus cartões." }, 401);
   try {
-    const cards = await database().prepare(`SELECT ${columns} FROM credit_cards WHERE userId = ? ORDER BY name,id`).bind(user.userId).all();
+    const cards = await database()
+      .prepare(
+        `SELECT ${columns} FROM credit_cards WHERE userId = ? ORDER BY name,id`,
+      )
+      .bind(user.userId)
+      .all();
     return json({ cards: cards.results });
   } catch (error) {
     console.error("Cards storage error", error);
@@ -25,43 +37,111 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
   const user = await getChatGPTUser();
   if (!user) return json({ error: "Entre para alterar seus cartões." }, 401);
   const origin = request.headers.get("origin");
-  if ((origin && origin !== new URL(request.url).origin) || request.headers.get("sec-fetch-site") === "cross-site")
+  if (
+    (origin && origin !== new URL(request.url).origin) ||
+    request.headers.get("sec-fetch-site") === "cross-site"
+  )
     return json({ error: "Origem inválida." }, 403);
   let data: Record<string, unknown>;
   let card;
   try {
-    if (!request.headers.get("content-type")?.includes("application/json")) throw new Error("Formato inválido.");
+    if (!request.headers.get("content-type")?.includes("application/json"))
+      throw new Error("Formato inválido.");
     const body = await request.text();
     if (body.length > 4096) return json({ error: "Dados muito grandes." }, 413);
     data = JSON.parse(body);
-    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Dados inválidos.");
-    if (method !== "POST" && (typeof data.id !== "string" || !data.id || data.id.length > 100)) throw new Error("Cartão inválido.");
+    if (!data || typeof data !== "object" || Array.isArray(data))
+      throw new Error("Dados inválidos.");
+    if (
+      method !== "POST" &&
+      (typeof data.id !== "string" || !data.id || data.id.length > 100)
+    )
+      throw new Error("Cartão inválido.");
     if (method !== "DELETE") card = validateCard(data);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Confira os dados do cartão." }, 400);
+    return json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Confira os dados do cartão.",
+      },
+      400,
+    );
   }
   try {
     const db = database();
     if (method === "POST") {
       const created = { ...card!, id: crypto.randomUUID() };
-      await db.prepare("INSERT INTO credit_cards (id,userId,name,creditLimit,closingDay,dueDay) VALUES (?,?,?,?,?,?)").bind(created.id, user.userId, created.name, created.creditLimit, created.closingDay, created.dueDay).run();
+      await db
+        .prepare(
+          "INSERT INTO credit_cards (id,userId,name,creditLimit,closingDay,dueDay) VALUES (?,?,?,?,?,?)",
+        )
+        .bind(
+          created.id,
+          user.userId,
+          created.name,
+          created.creditLimit,
+          created.closingDay,
+          created.dueDay,
+        )
+        .run();
       return json({ card: created }, 201);
     }
-    const old = await db.prepare(`SELECT ${columns} FROM credit_cards WHERE id = ? AND userId = ?`).bind(data.id, user.userId).first();
+    const old = await db
+      .prepare(
+        `SELECT ${columns} FROM credit_cards WHERE id = ? AND userId = ?`,
+      )
+      .bind(data.id, user.userId)
+      .first();
     if (!old) return json({ error: "Cartão não encontrado." }, 404);
     if (method === "PATCH") {
-      const result = await db.prepare("UPDATE credit_cards SET name = ?, creditLimit = ?, closingDay = ?, dueDay = ? WHERE id = ? AND userId = ?").bind(card!.name, card!.creditLimit, card!.closingDay, card!.dueDay, data.id, user.userId).run();
-      if (!result.meta.changes) return json({ error: "Cartão não encontrado." }, 404);
+      const result = await db
+        .prepare(
+          "UPDATE credit_cards SET name = ?, creditLimit = ?, closingDay = ?, dueDay = ? WHERE id = ? AND userId = ?",
+        )
+        .bind(
+          card!.name,
+          card!.creditLimit,
+          card!.closingDay,
+          card!.dueDay,
+          data.id,
+          user.userId,
+        )
+        .run();
+      if (!result.meta.changes)
+        return json({ error: "Cartão não encontrado." }, 404);
       return json({ card: { ...card!, id: data.id } });
     }
-    const result = await db.prepare("DELETE FROM credit_cards WHERE id = ? AND userId = ? AND NOT EXISTS (SELECT 1 FROM transactions WHERE cardId = ? AND userId = ?)").bind(data.id, user.userId, data.id, user.userId).run();
-    if (!result.meta.changes) return json({ error: "Este cartão possui compras. Preserve o histórico ou desvincule os lançamentos antes de excluir." }, 409);
+    const result = await db
+      .prepare(
+        "DELETE FROM credit_cards WHERE id = ? AND userId = ? AND NOT EXISTS (SELECT 1 FROM transactions WHERE cardId = ? AND userId = ?)",
+      )
+      .bind(data.id, user.userId, data.id, user.userId)
+      .run();
+    if (!result.meta.changes)
+      return json(
+        {
+          error:
+            "Este cartão possui compras. Preserve o histórico ou desvincule os lançamentos antes de excluir.",
+        },
+        409,
+      );
     return json({ ok: true });
   } catch (error) {
     console.error("Cards storage error", error);
-    return json({ error: "Não foi possível salvar seu cartão. Tente novamente." }, 503);
+    return json(
+      { error: "Não foi possível salvar seu cartão. Tente novamente." },
+      503,
+    );
   }
 }
-export async function POST(request: Request) { return mutate(request, "POST"); }
-export async function PATCH(request: Request) { return mutate(request, "PATCH"); }
-export async function DELETE(request: Request) { return mutate(request, "DELETE"); }
+export async function POST(request: Request) {
+  return mutate(request, "POST");
+}
+export async function PATCH(request: Request) {
+  return mutate(request, "PATCH");
+}
+export async function DELETE(request: Request) {
+  return mutate(request, "DELETE");
+}

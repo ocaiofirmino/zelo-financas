@@ -73,17 +73,28 @@ npm run test:cards
 npm run test:cards-api
 ```
 
+## Padrão de código
+
+O projeto usa Prettier 3.6.2 com a configuração de `.prettierrc.json`: indentação de dois espaços, aspas duplas, ponto e vírgula e quebras de linha LF. O comando percorre todo o projeto, incluindo TypeScript/TSX/MTS, JavaScript, CSS, JSON, HTML, Markdown e YAML. Dependências, arquivos gerados e estilos de terceiros seguem as exclusões de `.prettierignore`.
+
+```bash
+npm run format
+npm run format:check
+```
+
+A CI verifica a formatação antes de executar lint, TypeScript, testes e compilação da demonstração.
+
 ## Arquivos principais
 
-| Arquivo | Função |
-| --- | --- |
-| `app/landing.tsx` e `app/landing.css` | Página inicial, prévias, simulação e navegação. |
-| `app/login-drawer.tsx` e `app/login-drawer.css` | Avisos de login/cadastro em manutenção, sem formulários. |
-| `app/welcome.tsx` | Entrada compartilhada; endereços de acesso usam os novos painéis. |
-| `app/finance-full.tsx` | Interface e navegação do painel financeiro. |
-| `app/local-polish.css` | Refinamento visual do painel. |
-| `lib/app-access.ts` | Bloqueio do acesso pessoal durante a etapa visual. |
-| `db/`, `drizzle/` e `app/api/` | Base de persistência a integrar com o novo fluxo. |
-| `demo/` | Demonstração local independente de backend. |
+| Arquivo                                         | Função                                                            |
+| ----------------------------------------------- | ----------------------------------------------------------------- |
+| `app/landing.tsx` e `app/landing.css`           | Página inicial, prévias, simulação e navegação.                   |
+| `app/login-drawer.tsx` e `app/login-drawer.css` | Avisos de login/cadastro em manutenção, sem formulários.          |
+| `app/welcome.tsx`                               | Entrada compartilhada; endereços de acesso usam os novos painéis. |
+| `app/finance-full.tsx`                          | Interface e navegação do painel financeiro.                       |
+| `app/local-polish.css`                          | Refinamento visual do painel.                                     |
+| `lib/app-access.ts`                             | Bloqueio do acesso pessoal durante a etapa visual.                |
+| `db/`, `drizzle/` e `app/api/`                  | Base de persistência a integrar com o novo fluxo.                 |
+| `demo/`                                         | Demonstração local independente de backend.                       |
 
 As capturas do produto usam dados fictícios. O código publicado não inclui bancos locais, registros pessoais, dependências, backups ou artefatos de revisão visual.

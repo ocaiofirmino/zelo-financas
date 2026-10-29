@@ -58,7 +58,11 @@ export async function GET() {
           "SELECT id,description,amount,date,type,category,payment,status,installment,installments,groupId,cardId,purchaseDate FROM transactions WHERE userId = ? ORDER BY date DESC,id DESC",
         )
         .bind(user.userId),
-      db.prepare("SELECT id,name,creditLimit,closingDay,dueDay FROM credit_cards WHERE userId = ? ORDER BY name,id").bind(user.userId),
+      db
+        .prepare(
+          "SELECT id,name,creditLimit,closingDay,dueDay FROM credit_cards WHERE userId = ? ORDER BY name,id",
+        )
+        .bind(user.userId),
       db
         .prepare("SELECT month,goal,budgets FROM preferences WHERE userId = ?")
         .bind(user.userId),
@@ -97,13 +101,27 @@ export async function POST(request: Request) {
     const db = database();
     let card: CreditCard | undefined;
     if (value.payment === "card") {
-      if (!value.cardId) return invalid(new Error("Escolha um cartão para esta compra."));
-      const found = await db.prepare("SELECT id,name,creditLimit,closingDay,dueDay FROM credit_cards WHERE id = ? AND userId = ?").bind(value.cardId, user.userId).first<CreditCard>();
-      if (!found) return Response.json({ error: "Cartão não encontrado." }, { status: 404 });
+      if (!value.cardId)
+        return invalid(new Error("Escolha um cartão para esta compra."));
+      const found = await db
+        .prepare(
+          "SELECT id,name,creditLimit,closingDay,dueDay FROM credit_cards WHERE id = ? AND userId = ?",
+        )
+        .bind(value.cardId, user.userId)
+        .first<CreditCard>();
+      if (!found)
+        return Response.json(
+          { error: "Cartão não encontrado." },
+          { status: 404 },
+        );
       card = found;
     }
     let rows;
-    try { rows = makeTransactions(value, card); } catch (error) { return invalid(error); }
+    try {
+      rows = makeTransactions(value, card);
+    } catch (error) {
+      return invalid(error);
+    }
     await db.batch(
       rows.map((r) =>
         db
@@ -174,8 +192,15 @@ export async function PATCH(request: Request) {
     }
     const row = validateTransaction({ ...data, installments: 1 });
     if (row.cardId) {
-      const card = await db.prepare("SELECT id FROM credit_cards WHERE id = ? AND userId = ?").bind(row.cardId, user.userId).first();
-      if (!card) return Response.json({ error: "Cartão não encontrado." }, { status: 404 });
+      const card = await db
+        .prepare("SELECT id FROM credit_cards WHERE id = ? AND userId = ?")
+        .bind(row.cardId, user.userId)
+        .first();
+      if (!card)
+        return Response.json(
+          { error: "Cartão não encontrado." },
+          { status: 404 },
+        );
     }
     if (
       Number(old.installments) > 1 &&

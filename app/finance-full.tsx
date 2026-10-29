@@ -3,7 +3,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ExportStatement from "./export-statement";
 import CardsPage from "./cards";
-import { demoCards, invoiceDueDate, validateCard, type CardInput, type CreditCard as PersonalCard } from "@/lib/cards";
+import {
+  demoCards,
+  invoiceDueDate,
+  validateCard,
+  type CardInput,
+  type CreditCard as PersonalCard,
+} from "@/lib/cards";
 import { PERSONAL_ACCOUNTS_ENABLED } from "@/lib/app-access";
 import SiteFooter from "./site-footer";
 import {
@@ -119,10 +125,25 @@ function demoData() {
         status: "pending" as const,
       })),
     );
-  return [...current, ...getDemo(shiftMonth(month, -1)), ...future].map((row) => {
-    const card = row.payment === "card" ? demoCards[row.description === "Celular" || row.description === "Tênis" ? 1 : 0] : null;
-    return { ...row, cardId: card?.id ?? null, date: card ? invoiceDueDate(row.date.slice(0, 7), card.dueDay) : row.date };
-  });
+  return [...current, ...getDemo(shiftMonth(month, -1)), ...future].map(
+    (row) => {
+      const card =
+        row.payment === "card"
+          ? demoCards[
+              row.description === "Celular" || row.description === "Tênis"
+                ? 1
+                : 0
+            ]
+          : null;
+      return {
+        ...row,
+        cardId: card?.id ?? null,
+        date: card
+          ? invoiceDueDate(row.date.slice(0, 7), card.dueDay)
+          : row.date,
+      };
+    },
+  );
 }
 function blankDraft(month: string): Draft {
   return {
@@ -145,7 +166,11 @@ type ApiResult = {
   cards: PersonalCard[];
   card: PersonalCard;
 };
-async function api(method: string, data?: unknown, resource: "finance" | "cards" = "finance") {
+async function api(
+  method: string,
+  data?: unknown,
+  resource: "finance" | "cards" = "finance",
+) {
   const response = await fetch("/api/" + resource, {
     method,
     headers: { "Content-Type": "application/json" },
@@ -185,7 +210,9 @@ export default function FinanceApp({
     [busy, setBusy] = useState(false),
     [leavingId, setLeavingId] = useState<string | null>(null);
   const [sidebarCompact, setSidebarCompact] = useState(false);
-  const [exampleCards, setExampleCards] = useState<PersonalCard[]>(() => [...demoCards]);
+  const [exampleCards, setExampleCards] = useState<PersonalCard[]>(() => [
+    ...demoCards,
+  ]);
   const [savedCards, setSavedCards] = useState<PersonalCard[]>([]);
   const cards = demo ? exampleCards : savedCards;
   const cardMutation = useRef(false);
@@ -333,7 +360,12 @@ export default function FinanceApp({
             installments: 1,
             cardId: row.cardId ?? "",
           }
-        : { ...blankDraft(month), ...(cardId ? { cardId, payment: "card" as const, status: "pending" as const } : {}) },
+        : {
+            ...blankDraft(month),
+            ...(cardId
+              ? { cardId, payment: "card" as const, status: "pending" as const }
+              : {}),
+          },
     );
     setFormError("");
     setEntryOpen(true);
@@ -364,7 +396,10 @@ export default function FinanceApp({
         cardId: draft.payment === "card" ? draft.cardId || null : null,
       });
       const card = cards.find((item) => item.id === value.cardId);
-      if (value.payment === "card" && ((!editing && !card) || (value.cardId && !card)))
+      if (
+        value.payment === "card" &&
+        ((!editing && !card) || (value.cardId && !card))
+      )
         throw new Error("Escolha um cartão para esta compra.");
       if (!demo && !loaded)
         throw new Error("Carregue seus dados antes de salvar.");
@@ -407,25 +442,50 @@ export default function FinanceApp({
     setBusy(true);
     try {
       const input = validateCard(value);
-      const card = demo ? { ...input, id: id ?? crypto.randomUUID() } : (await api(id ? "PATCH" : "POST", { ...input, ...(id ? { id } : {}) }, "cards")).card;
-      const update = (current: PersonalCard[]) => id ? current.map((item) => item.id === id ? card : item) : [...current, card];
-      if (demo) setExampleCards(update); else setSavedCards(update);
-      setNotice(id ? "Cartão atualizado. Os vencimentos existentes foram preservados." : "Cartão cadastrado.");
-    } finally { cardMutation.current = false; setBusy(false); }
+      const card = demo
+        ? { ...input, id: id ?? crypto.randomUUID() }
+        : (
+            await api(
+              id ? "PATCH" : "POST",
+              { ...input, ...(id ? { id } : {}) },
+              "cards",
+            )
+          ).card;
+      const update = (current: PersonalCard[]) =>
+        id
+          ? current.map((item) => (item.id === id ? card : item))
+          : [...current, card];
+      if (demo) setExampleCards(update);
+      else setSavedCards(update);
+      setNotice(
+        id
+          ? "Cartão atualizado. Os vencimentos existentes foram preservados."
+          : "Cartão cadastrado.",
+      );
+    } finally {
+      cardMutation.current = false;
+      setBusy(false);
+    }
   }
   async function deleteCard(id: string) {
     if (previewOnly || busy || cardMutation.current || (!demo && !loaded))
       throw new Error("Aguarde o carregamento dos seus dados.");
     if (allRows.some((row) => row.cardId === id))
-      throw new Error("Este cartão possui compras. Desvincule os lançamentos antes de excluir.");
+      throw new Error(
+        "Este cartão possui compras. Desvincule os lançamentos antes de excluir.",
+      );
     cardMutation.current = true;
     setBusy(true);
     try {
       if (!demo) await api("DELETE", { id }, "cards");
-      if (demo) setExampleCards((current) => current.filter((card) => card.id !== id));
+      if (demo)
+        setExampleCards((current) => current.filter((card) => card.id !== id));
       else setSavedCards((current) => current.filter((card) => card.id !== id));
       setNotice("Cartão excluído.");
-    } finally { cardMutation.current = false; setBusy(false); }
+    } finally {
+      cardMutation.current = false;
+      setBusy(false);
+    }
   }
   async function toggleStatus(row: Transaction, animate = false) {
     if (previewOnly || busy || (!demo && !loaded)) return;
@@ -659,7 +719,10 @@ export default function FinanceApp({
                 <td>
                   <strong>{r.description}</strong>
                   <small>
-                    {r.payment === "card" ? cards.find((card) => card.id === r.cardId)?.name ?? "Sem cartão vinculado" : "Pix / débito"}
+                    {r.payment === "card"
+                      ? (cards.find((card) => card.id === r.cardId)?.name ??
+                        "Sem cartão vinculado")
+                      : "Pix / débito"}
                     {r.installments > 1
                       ? " · " + r.installment + "/" + r.installments
                       : ""}
@@ -1549,7 +1612,11 @@ export default function FinanceApp({
                 />
               </label>
               <label>
-                {draft.payment === "card" ? editing ? "Vencimento da parcela" : "Data da compra" : "Data"}
+                {draft.payment === "card"
+                  ? editing
+                    ? "Vencimento da parcela"
+                    : "Data da compra"
+                  : "Data"}
                 <input
                   type="date"
                   required
@@ -1589,8 +1656,12 @@ export default function FinanceApp({
                     setDraft({
                       ...draft,
                       payment: e.target.value as Draft["payment"],
-                      cardId: e.target.value === "card" ? draft.cardId || cards[0]?.id || "" : "",
-                      status: e.target.value === "card" ? "pending" : draft.status,
+                      cardId:
+                        e.target.value === "card"
+                          ? draft.cardId || cards[0]?.id || ""
+                          : "",
+                      status:
+                        e.target.value === "card" ? "pending" : draft.status,
                       installments: 1,
                     })
                   }
@@ -1603,11 +1674,28 @@ export default function FinanceApp({
             {draft.payment === "card" && (
               <label>
                 Cartão da compra
-                <select required={!editing} value={draft.cardId} onChange={(e) => setDraft({ ...draft, cardId: e.target.value })}>
-                  <option value="">{editing ? "Sem cartão vinculado" : "Selecione um cartão"}</option>
-                  {cards.map((card) => <option key={card.id} value={card.id}>{card.name}</option>)}
+                <select
+                  required={!editing}
+                  value={draft.cardId}
+                  onChange={(e) =>
+                    setDraft({ ...draft, cardId: e.target.value })
+                  }
+                >
+                  <option value="">
+                    {editing ? "Sem cartão vinculado" : "Selecione um cartão"}
+                  </option>
+                  {cards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.name}
+                    </option>
+                  ))}
                 </select>
-                {!cards.length && <span className="form-note">Cadastre um cartão na tela Cartões antes de registrar a compra.</span>}
+                {!cards.length && (
+                  <span className="form-note">
+                    Cadastre um cartão na tela Cartões antes de registrar a
+                    compra.
+                  </span>
+                )}
               </label>
             )}
             {draft.type === "expense" &&
@@ -1634,8 +1722,9 @@ export default function FinanceApp({
               )}
             {draft.installments > 1 && !editing && (
               <p className="form-note">
-                O primeiro vencimento considera a data da compra e o fechamento do cartão.
-                As demais parcelas entram nas faturas seguintes. A situação escolhida vale para a primeira.
+                O primeiro vencimento considera a data da compra e o fechamento
+                do cartão. As demais parcelas entram nas faturas seguintes. A
+                situação escolhida vale para a primeira.
               </p>
             )}
             {editing && editing.installments > 1 && (

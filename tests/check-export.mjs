@@ -111,7 +111,15 @@ function parseCsv(bytes, delimiter) {
 const build = (format, overrides = {}) =>
   buildFinanceExport({
     transactions: fixtures,
-    cards: [{ id: "cartao-compras", name: "Compras", creditLimit: 500000, closingDay: 20, dueDay: 3 }],
+    cards: [
+      {
+        id: "cartao-compras",
+        name: "Compras",
+        creditLimit: 500000,
+        closingDay: 20,
+        dueDay: 3,
+      },
+    ],
     month: "2026-10",
     scope: "month",
     format,
@@ -315,4 +323,3 @@ assert.equal(
 console.log(
   "Export checks passed: CSV/BI cents, signs, statuses, scope, safety, Unicode, installments, XLSX dates/formulas and empty files.",
 );
-

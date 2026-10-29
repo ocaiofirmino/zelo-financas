@@ -24,7 +24,12 @@ try {
     amount: -100,
   });
   assert.equal(invalid.status, 400);
-  const card = await request("POST", { name: "QA cartão", creditLimit: 100000, closingDay: 25, dueDay: 31 }, user, "http://127.0.0.1:5174/api/cards");
+  const card = await request(
+    "POST",
+    { name: "QA cartão", creditLimit: 100000, closingDay: 25, dueDay: 31 },
+    user,
+    "http://127.0.0.1:5174/api/cards",
+  );
   assert.equal(card.status, 201);
   cardId = card.data.card.id;
   const created = await request("POST", {
@@ -88,5 +93,16 @@ try {
     const deleted = await request("DELETE", { id });
     assert.equal(deleted.status, 200);
   }
-  if (cardId) assert.equal((await request("DELETE", { id: cardId }, user, "http://127.0.0.1:5174/api/cards")).status, 200);
+  if (cardId)
+    assert.equal(
+      (
+        await request(
+          "DELETE",
+          { id: cardId },
+          user,
+          "http://127.0.0.1:5174/api/cards",
+        )
+      ).status,
+      200,
+    );
 }

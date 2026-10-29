@@ -22,7 +22,10 @@ export const creditCards = sqliteTable(
   (t) => [
     uniqueIndex("idx_credit_cards_id_user").on(t.id, t.userId),
     index("idx_credit_cards_user").on(t.userId),
-    check("card_limit_valid", sql`${t.creditLimit} > 0 AND ${t.creditLimit} <= 1000000000`),
+    check(
+      "card_limit_valid",
+      sql`${t.creditLimit} > 0 AND ${t.creditLimit} <= 1000000000`,
+    ),
     check("card_closing_valid", sql`${t.closingDay} BETWEEN 1 AND 31`),
     check("card_due_valid", sql`${t.dueDay} BETWEEN 1 AND 31`),
   ],
@@ -48,7 +51,11 @@ export const transactions = sqliteTable(
   (t) => [
     index("idx_transactions_user_date").on(t.userId, t.date),
     index("idx_transactions_user_card_date").on(t.userId, t.cardId, t.date),
-    foreignKey({ name: "transactions_card_owner_fk", columns: [t.cardId, t.userId], foreignColumns: [creditCards.id, creditCards.userId] }).onDelete("restrict"),
+    foreignKey({
+      name: "transactions_card_owner_fk",
+      columns: [t.cardId, t.userId],
+      foreignColumns: [creditCards.id, creditCards.userId],
+    }).onDelete("restrict"),
   ],
 );
 export const preferences = sqliteTable(

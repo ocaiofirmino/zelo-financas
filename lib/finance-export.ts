@@ -137,10 +137,18 @@ function csvLine(
 }
 
 function cardCells(row: Transaction, cards: CreditCard[]) {
-  return [row.cardId ?? "", cards.find((card) => card.id === row.cardId)?.name ?? (row.payment === "card" ? "Sem cartão vinculado" : ""), row.purchaseDate ?? ""];
+  return [
+    row.cardId ?? "",
+    cards.find((card) => card.id === row.cardId)?.name ??
+      (row.payment === "card" ? "Sem cartão vinculado" : ""),
+    row.purchaseDate ?? "",
+  ];
 }
 
-function humanCells(row: Transaction, cards: CreditCard[] = []): (string | number)[] {
+function humanCells(
+  row: Transaction,
+  cards: CreditCard[] = [],
+): (string | number)[] {
   return [
     row.id,
     row.groupId ?? "",
@@ -160,7 +168,10 @@ function humanCells(row: Transaction, cards: CreditCard[] = []): (string | numbe
   ];
 }
 
-function biCells(row: Transaction, cards: CreditCard[] = []): (string | number)[] {
+function biCells(
+  row: Transaction,
+  cards: CreditCard[] = [],
+): (string | number)[] {
   return [
     row.id,
     row.groupId ?? "",
@@ -319,10 +330,15 @@ async function makeWorkbook(
   const statement = workbook.addWorksheet("Lançamentos");
   statement.columns = statementHeaders.map((header, index) => ({
     header,
-    width: [38, 38, 15, 16, 42, 14, 20, 15, 16, 12, 20, 19, 24, 10, 38, 28, 18][index],
+    width: [38, 38, 15, 16, 42, 14, 20, 15, 16, 12, 20, 19, 24, 10, 38, 28, 18][
+      index
+    ],
   }));
   rows.forEach((transaction) => {
-    const values: (string | number | Date)[] = humanCells(transaction, options.cards);
+    const values: (string | number | Date)[] = humanCells(
+      transaction,
+      options.cards,
+    );
     values[2] = new Date(`${transaction.date}T00:00:00.000Z`);
     values[11] = transaction.amount / 100;
     values[12] = signedCents(transaction) / 100;
