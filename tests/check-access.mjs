@@ -12,7 +12,7 @@ assert.equal(
 );
 globalThis.__zeloBlockedResponse = personalAccessUnavailable;
 try {
-  for (const name of ["finance", "savings", "profile"]) {
+  for (const name of ["finance", "savings", "profile", "cards"]) {
     const source =
       "const PERSONAL_ACCOUNTS_ENABLED = false; const personalAccessUnavailable = globalThis.__zeloBlockedResponse;\n" +
       readFileSync(

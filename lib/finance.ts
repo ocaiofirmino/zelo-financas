@@ -1,3 +1,5 @@
+import { firstInvoiceDate, invoiceDueDate, type CreditCard } from "./cards.ts";
+
 export const categories = [
   "Moradia",
   "Alimentação",
@@ -28,6 +30,8 @@ export type Transaction = {
   installment: number;
   installments: number;
   groupId: string | null;
+  cardId?: string | null;
+  purchaseDate?: string | null;
 };
 export type Settings = { goal: number; budgets: Record<string, number> };
 export const defaultSettings: Settings = { goal: 0, budgets: {} };
@@ -151,6 +155,15 @@ export function validateTransaction(value: unknown) {
     throw new Error("Confira a quantidade de parcelas (1 a 60).");
   if (installmentDate(v.date, v.installments! - 1) > "2100-12-31")
     throw new Error("A última parcela deve vencer até 2100.");
+  if (
+    v.cardId != null &&
+    (typeof v.cardId !== "string" || !v.cardId.trim() || v.cardId.length > 100)
+  )
+    throw new Error("Escolha um cartão válido.");
+  if (v.cardId && (v.payment !== "card" || v.type !== "expense"))
+    throw new Error(
+      "Somente despesas no cartão podem ser vinculadas a um cartão.",
+    );
   return {
     description: v.description.trim(),
     amount: v.amount!,
@@ -160,11 +173,16 @@ export function validateTransaction(value: unknown) {
     category: v.category,
     payment: v.payment!,
     installments: v.installments!,
+    cardId: v.cardId ?? null,
   };
 }
 export function makeTransactions(
   input: ReturnType<typeof validateTransaction>,
+  card?: CreditCard,
 ): Transaction[] {
+  if (input.cardId && (!card || card.id !== input.cardId))
+    throw new Error("Escolha um cartão válido para a compra.");
+  const firstDue = card ? firstInvoiceDate(input.date, card) : input.date;
   const groupId = input.installments > 1 ? crypto.randomUUID() : null;
   const base = Math.floor(input.amount / input.installments),
     remainder = input.amount % input.installments;
@@ -174,7 +192,10 @@ export function makeTransactions(
     groupId,
     installment: i + 1,
     amount: base + (i < remainder ? 1 : 0),
-    date: installmentDate(input.date, i),
+    date: card
+      ? invoiceDueDate(firstDue.slice(0, 7), card.dueDay, i)
+      : installmentDate(input.date, i),
+    purchaseDate: card ? input.date : null,
     status: i === 0 ? input.status : "pending",
   }));
 }

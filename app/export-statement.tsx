@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { monthTitle, type Transaction } from "@/lib/finance";
+import type { CreditCard } from "@/lib/cards";
 import {
   buildFinanceExport,
   selectExportRows,
@@ -51,6 +52,7 @@ const formats = [
 
 type Props = {
   transactions: Transaction[];
+  cards?: CreditCard[];
   month: string;
   demo: boolean;
   disabled: boolean;
@@ -61,6 +63,7 @@ type Props = {
 
 export default function ExportStatement({
   transactions,
+  cards,
   month,
   demo,
   disabled,
@@ -91,6 +94,7 @@ export default function ExportStatement({
     try {
       const file = await buildFinanceExport({
         transactions,
+        cards,
         month,
         scope,
         format,

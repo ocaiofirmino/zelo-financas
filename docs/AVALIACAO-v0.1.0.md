@@ -21,16 +21,16 @@ Os exemplos financeiros usados na revisão eram fictícios. Os testes da API uti
 
 ## Verificações executadas
 
-| Verificação | Resultado |
-| --- | --- |
-| `npm.cmd run lint` | Aprovado, sem erros ou avisos do ESLint. |
-| `npx.cmd tsc --noEmit` | Aprovado. |
-| `npm.cmd run test:finance` | Aprovado. |
-| `npm.cmd run test:export` | Aprovado. |
-| `npm.cmd run build` | Aprovado. |
-| Instalação limpa com `npm.cmd run install:ci` | Aprovada, seguida de compilação, criação de banco vazio e inicialização do servidor. |
-| Teste existente da API e 37 verificações adicionais | Aprovados: operações, validação, isolamento, origem e persistência. |
-| Exercício adicional de divisão das parcelas | 16.140 combinações fictícias verificadas. |
+| Verificação                                         | Resultado                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `npm.cmd run lint`                                  | Aprovado, sem erros ou avisos do ESLint.                                             |
+| `npx.cmd tsc --noEmit`                              | Aprovado.                                                                            |
+| `npm.cmd run test:finance`                          | Aprovado.                                                                            |
+| `npm.cmd run test:export`                           | Aprovado.                                                                            |
+| `npm.cmd run build`                                 | Aprovado.                                                                            |
+| Instalação limpa com `npm.cmd run install:ci`       | Aprovada, seguida de compilação, criação de banco vazio e inicialização do servidor. |
+| Teste existente da API e 37 verificações adicionais | Aprovados: operações, validação, isolamento, origem e persistência.                  |
+| Exercício adicional de divisão das parcelas         | 16.140 combinações fictícias verificadas.                                            |
 
 A compilação emite um aviso de tamanho de alguns arquivos JavaScript, acima de 500 kB. Isso não impediu a execução; a redução do carregamento inicial é uma melhoria futura.
 
