@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { CreditCard as CardIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, CreditCard as CardIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import CardBulkLink from "./card-bulk-link";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,8 @@ type Props = {
   disabled: boolean;
   onSave: (value: CardInput, id?: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onArchive: (id: string, archived: boolean) => Promise<void>;
+  onLink: (ids: string[], cardId: string) => Promise<void>;
   onNewPurchase: (cardId: string) => void;
   renderTransactions: (rows: Transaction[]) => ReactNode;
 };
@@ -42,10 +45,17 @@ export default function CardsPage({
   disabled,
   onSave,
   onDelete,
+  onArchive,
+  onLink,
   onNewPurchase,
   renderTransactions,
 }: Props) {
   const [selected, setSelected] = useState("all");
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveCard, setArchiveCard] = useState<CreditCard | null>(null);
+  const [archiveError, setArchiveError] = useState("");
+  const visibleCards = cards.filter((card) => Boolean(card.archived) === showArchived);
+  const archiveCount = cards.filter((card) => card.archived).length;
   const [form, setForm] = useState<{ card?: CreditCard } | null>(null);
   const [name, setName] = useState("");
   const [limit, setLimit] = useState("");
@@ -56,16 +66,16 @@ export default function CardsPage({
   const returnFocus = useRef<HTMLElement | null>(null);
   const selection =
     selected === "all" ||
-    cards.some((c) => c.id === selected) ||
-    selected === "unassigned"
+    visibleCards.some((c) => c.id === selected) ||
+    (!showArchived && selected === "unassigned")
       ? selected
       : "all";
   const unassigned = transactions.some(
     (r) => r.type === "expense" && r.payment === "card" && !r.cardId,
   );
   const shown: (CreditCard | null)[] = [
-    ...cards.filter((card) => selection === "all" || selection === card.id),
-    ...(unassigned && (selection === "all" || selection === "unassigned")
+    ...visibleCards.filter((card) => selection === "all" || selection === card.id),
+    ...(!showArchived && unassigned && (selection === "all" || selection === "unassigned")
       ? [null]
       : []),
   ];
@@ -97,6 +107,7 @@ export default function CardsPage({
         dueDay: Number(dueDay),
       });
       await onSave(value, form?.card?.id);
+      if (!form?.card) setShowArchived(false);
       setForm(null);
     } catch (caught) {
       setError(
@@ -126,16 +137,28 @@ export default function CardsPage({
       );
     }
   }
+  function confirmArchive(card: CreditCard) {
+    if (readOnly || disabled) return;
+    returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setArchiveError("");
+    setArchiveCard(card);
+  }
+  async function archive() {
+    if (readOnly || disabled || !archiveCard) return;
+    try { await onArchive(archiveCard.id, !archiveCard.archived); setArchiveCard(null); setSelected("all"); } catch (caught) { setArchiveError(caught instanceof Error ? caught.message : "Não foi possível alterar o cartão."); }
+  }
 
   return (
     <div className="multi-cards">
       <div className="section-head">
         <div>
-          <h2>Meus cartões</h2>
+          <h2>{showArchived ? "Cartões arquivados" : "Meus cartões"}</h2>
           <p className="context-note">
             Compras e faturas organizadas por cartão.
           </p>
         </div>
+        <div className="card-page-actions">
+        {!showArchived && <CardBulkLink cards={cards} transactions={transactions} readOnly={readOnly} disabled={disabled} onLink={onLink} />}
         {!readOnly && (
           <button
             className="primary-button"
@@ -145,16 +168,19 @@ export default function CardsPage({
             <Plus size={17} /> Novo cartão
           </button>
         )}
+        </div>
       </div>
+      <div className="card-archive-tabs" aria-label="Exibir cartões"><button type="button" aria-pressed={!showArchived} onClick={() => { setShowArchived(false); setSelected("all"); }}>Ativos <span>{cards.length - archiveCount}</span></button><button type="button" aria-pressed={showArchived} onClick={() => { setShowArchived(true); setSelected("all"); }}><Archive size={16} /> Arquivados <span>{archiveCount}</span></button></div>
       <div className="credit-cards-grid">
-        {cards.map((card) => {
+        {visibleCards.map((card) => {
           const invoice = cardInvoice(transactions, card.id, month);
           const available = Math.max(0, card.creditLimit - invoice.committed);
           return (
-            <article className="credit-card-tile" key={card.id}>
+            <article className="credit-card-tile" key={card.id} data-archived={card.archived}>
               <div className="credit-card-heading">
                 <CardIcon size={23} />
                 <strong>{card.name}</strong>
+                {card.archived && <span className="card-archived-badge">Arquivado</span>}
                 {!readOnly && (
                   <button
                     className="card-edit-button"
@@ -195,6 +221,7 @@ export default function CardsPage({
                   <dd>Dia {card.dueDay}</dd>
                 </div>
               </dl>
+              {!readOnly && <div className="card-archive-action"><button type="button" className="secondary-button" disabled={disabled} onClick={() => confirmArchive(card)}>{card.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}{card.archived ? "Restaurar cartão" : "Arquivar cartão"}</button></div>}
               {invoice.committed > card.creditLimit && (
                 <p className="card-limit-alert" role="status">
                   Compromissos acima do limite em{" "}
@@ -205,14 +232,12 @@ export default function CardsPage({
           );
         })}
       </div>
-      {!cards.length && (
+      {!visibleCards.length && (
         <div className="empty-state">
           <CardIcon size={32} />
-          <h3>Seu primeiro cartão começa aqui.</h3>
+          <h3>{showArchived ? "Nenhum cartão arquivado." : "Nenhum cartão ativo."}</h3>
           <p>
-            {readOnly
-              ? "Nenhum cartão disponível nesta demonstração."
-              : "Cadastre um cartão para separar suas compras e faturas."}
+            {showArchived ? "Os cartões arquivados aparecerão aqui com seu histórico." : "Cadastre um cartão ou restaure um cartão arquivado para organizar suas compras."}
           </p>
         </div>
       )}
@@ -224,12 +249,12 @@ export default function CardsPage({
             onChange={(e) => setSelected(e.target.value)}
           >
             <option value="all">Todos os cartões</option>
-            {cards.map((card) => (
+            {visibleCards.map((card) => (
               <option key={card.id} value={card.id}>
                 {card.name}
               </option>
             ))}
-            {unassigned && (
+            {!showArchived && unassigned && (
               <option value="unassigned">Sem cartão vinculado</option>
             )}
           </select>
@@ -257,7 +282,7 @@ export default function CardsPage({
                     : ""}
                 </p>
               </div>
-              {card && !readOnly && (
+              {card && !card.archived && !readOnly && (
                 <button
                   className="secondary-button"
                   disabled={disabled}
@@ -269,8 +294,7 @@ export default function CardsPage({
             </div>
             {!card && (
               <p className="context-note card-legacy-note">
-                Seus lançamentos anteriores foram preservados. Edite cada
-                lançamento para escolher o cartão; o vencimento será mantido.
+                Seus lançamentos anteriores foram preservados. Vincule as compras em lote ou edite um lançamento para escolher seu cartão; o vencimento será mantido.
               </p>
             )}
             <dl className="invoice-totals">
@@ -315,6 +339,15 @@ export default function CardsPage({
         parcelas futuras. Os cartões são registros manuais, sem conexão com o
         banco.
       </p>
+      <Dialog open={archiveCard !== null} onOpenChange={(open) => { if (!open && !disabled) setArchiveCard(null); }}>
+        <DialogContent className="finance-dialog" showCloseButton={!disabled} onCloseAutoFocus={(event) => { event.preventDefault(); if (returnFocus.current?.isConnected) returnFocus.current.focus(); else document.querySelector<HTMLButtonElement>(".multi-cards .primary-button")?.focus(); }}>
+          <DialogTitle>{archiveCard?.archived ? "Restaurar cartão?" : "Arquivar cartão?"}</DialogTitle>
+          <DialogDescription>{archiveCard?.name}. {archiveCard?.archived ? "O cartão voltará a receber novas compras." : "Novas compras serão bloqueadas. O histórico, as faturas e as parcelas futuras continuarão disponíveis em Arquivados e nos totais do mês."}</DialogDescription>
+          {archiveCard && cardInvoice(transactions, archiveCard.id, month).committed > 0 && <p className="form-note">Este cartão ainda possui {money(cardInvoice(transactions, archiveCard.id, month).committed)} em compras pendentes.</p>}
+          {archiveError && <p className="form-error" role="alert">{archiveError}</p>}
+          <div className="form-buttons"><button type="button" className="secondary-button" disabled={disabled} onClick={() => setArchiveCard(null)}>Cancelar</button><button type="button" className="primary-button" disabled={disabled} onClick={() => void archive()}>{disabled ? "Salvando…" : archiveCard?.archived ? "Restaurar cartão" : "Arquivar cartão"}</button></div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={form !== null}
         onOpenChange={(open) => {

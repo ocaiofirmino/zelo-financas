@@ -32,6 +32,8 @@ A flag `PERSONAL_ACCOUNTS_ENABLED` está em `false` e também força o painel ao
 
 ## Próximas etapas
 
+A branch `feature/3-newfeatures` acrescenta arquivamento/restauração de cartões, edição e exclusão de parcelas em grupo e vínculo de compras antigas em lote. Consulte [as regras e a migração dessas três funções](docs/3-NEWFEATURES.md). A publicação na Vercel será avaliada em uma etapa posterior.
+
 1. Implementar cadastro real, autenticação, sessões, saída, confirmação de e-mail e recuperação de senha.
 2. Integrar a identidade de cada conta às APIs e ao banco; revisar/aplicar as migrações e validar leitura/gravação.
 3. Conectar perfil, lançamentos e cofrinhos ao usuário autenticado e testar o isolamento entre contas.

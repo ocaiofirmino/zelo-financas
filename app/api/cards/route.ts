@@ -7,7 +7,7 @@ import { database } from "@/db/raw";
 import { validateCard } from "@/lib/cards";
 
 export const dynamic = "force-dynamic";
-const columns = "id,name,creditLimit,closingDay,dueDay";
+const columns = "id,name,creditLimit,closingDay,dueDay,archived";
 const json = (data: unknown, status = 200) =>
   Response.json(data, {
     status,
@@ -25,7 +25,7 @@ export async function GET() {
       )
       .bind(user.userId)
       .all();
-    return json({ cards: cards.results });
+    return json({ cards: cards.results.map((card) => ({ ...card, archived: Boolean(card.archived) })) });
   } catch (error) {
     console.error("Cards storage error", error);
     return json({ error: "Não foi possível carregar seus cartões." }, 503);
@@ -44,6 +44,7 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
     return json({ error: "Origem inválida." }, 403);
   let data: Record<string, unknown>;
   let card;
+  let archiveOnly = false;
   try {
     if (!request.headers.get("content-type")?.includes("application/json"))
       throw new Error("Formato inválido.");
@@ -57,7 +58,11 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
       (typeof data.id !== "string" || !data.id || data.id.length > 100)
     )
       throw new Error("Cartão inválido.");
-    if (method !== "DELETE") card = validateCard(data);
+    if (data.archived !== undefined) {
+      if (method !== "PATCH" || typeof data.archived !== "boolean" || ["name", "creditLimit", "closingDay", "dueDay"].some((key) => data[key] !== undefined)) throw new Error("Confira a operação de arquivamento do cartão.");
+      archiveOnly = true;
+    }
+    if (method !== "DELETE" && !archiveOnly) card = validateCard(data);
   } catch (error) {
     return json(
       {
@@ -72,7 +77,7 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
   try {
     const db = database();
     if (method === "POST") {
-      const created = { ...card!, id: crypto.randomUUID() };
+      const created = { ...card!, id: crypto.randomUUID(), archived: false };
       await db
         .prepare(
           "INSERT INTO credit_cards (id,userId,name,creditLimit,closingDay,dueDay) VALUES (?,?,?,?,?,?)",
@@ -95,6 +100,11 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
       .bind(data.id, user.userId)
       .first();
     if (!old) return json({ error: "Cartão não encontrado." }, 404);
+    if (archiveOnly) {
+      const result = await db.prepare("UPDATE credit_cards SET archived = ? WHERE id = ? AND userId = ?").bind(data.archived ? 1 : 0, data.id, user.userId).run();
+      if (!result.meta.changes) return json({ error: "Cartão não encontrado." }, 404);
+      return json({ card: { ...old, archived: data.archived } });
+    }
     if (method === "PATCH") {
       const result = await db
         .prepare(
@@ -111,7 +121,7 @@ async function mutate(request: Request, method: "POST" | "PATCH" | "DELETE") {
         .run();
       if (!result.meta.changes)
         return json({ error: "Cartão não encontrado." }, 404);
-      return json({ card: { ...card!, id: data.id } });
+      return json({ card: { ...card!, id: data.id, archived: Boolean(old.archived) } });
     }
     const result = await db
       .prepare(

@@ -18,6 +18,7 @@ export const creditCards = sqliteTable(
     creditLimit: integer("creditLimit").notNull(),
     closingDay: integer("closingDay").notNull(),
     dueDay: integer("dueDay").notNull(),
+    archived: integer("archived", { mode: "boolean" }).notNull().default(false),
   },
   (t) => [
     uniqueIndex("idx_credit_cards_id_user").on(t.id, t.userId),
@@ -28,6 +29,7 @@ export const creditCards = sqliteTable(
     ),
     check("card_closing_valid", sql`${t.closingDay} BETWEEN 1 AND 31`),
     check("card_due_valid", sql`${t.dueDay} BETWEEN 1 AND 31`),
+    check("card_archived_valid", sql`${t.archived} IN (0, 1)`),
   ],
 );
 export const transactions = sqliteTable(

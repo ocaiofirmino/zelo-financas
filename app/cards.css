@@ -222,3 +222,182 @@
     padding: 18px 16px;
   }
 }
+
+.card-page-actions,
+.card-archive-tabs,
+.bulk-link-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.card-page-actions .secondary-button {
+  white-space: normal;
+}
+
+.card-archive-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.card-archive-tabs button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+.card-count,
+.card-archived-badge,
+.card-archive-tabs button span {
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: 12px;
+}
+
+.card-archived-badge {
+  margin-left: auto;
+}
+
+.credit-card-tile[data-archived="true"] {
+  border-style: dashed;
+}
+
+.card-archive-action {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.card-archive-action .secondary-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.transaction-scope {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--secondary);
+}
+
+.transaction-scope label {
+  display: grid;
+  gap: 8px;
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.transaction-scope select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--input);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--card-foreground);
+  color-scheme: dark;
+}
+
+.transaction-scope select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.transaction-scope .form-note {
+  margin: 0;
+}
+
+.finance-dialog.bulk-link-dialog {
+  width: min(740px, calc(100vw - 32px));
+  max-width: 740px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+.bulk-link-list {
+  display: grid;
+  gap: 0;
+  max-height: 300px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.finance-form .bulk-link-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+.bulk-link-row + .bulk-link-row {
+  border-top: 1px solid var(--border);
+}
+
+.finance-form .bulk-link-row input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.bulk-link-row span {
+  overflow-wrap: anywhere;
+}
+
+.bulk-link-row small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.bulk-link-row strong {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.bulk-link-empty {
+  padding: 18px;
+}
+
+@media (max-width: 560px) {
+  .card-page-actions,
+  .card-page-actions > button {
+    width: 100%;
+  }
+
+  .card-page-actions > button {
+    justify-content: center;
+  }
+
+  .finance-form .bulk-link-row {
+    gap: 8px;
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .bulk-link-actions .secondary-button {
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+}

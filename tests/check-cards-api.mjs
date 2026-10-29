@@ -4,6 +4,7 @@ import ts from "typescript";
 import { DatabaseSync } from "node:sqlite";
 import { personalAccessUnavailable } from "../lib/app-access.ts";
 import { validateCard } from "../lib/cards.ts";
+import * as transactionBatch from "../lib/transaction-batch.ts";
 import {
   categories,
   makeTransactions,
@@ -51,6 +52,7 @@ sqlite.exec(
     "utf8",
   ),
 );
+sqlite.exec(readFileSync(new URL("../drizzle/0004_card_archiving.sql", import.meta.url), "utf8"));
 assert.equal(
   sqlite.prepare("SELECT amount FROM transactions WHERE id = 'legacy'").get()
     .amount,
@@ -108,10 +110,11 @@ globalThis.__cardsTest = {
   makeTransactions,
   validateTransaction,
   personalAccessUnavailable,
+  ...transactionBatch,
 };
 async function handlers(path) {
   const source =
-    "const { getChatGPTUser, database, validateCard, categories, makeTransactions, validateTransaction, personalAccessUnavailable } = globalThis.__cardsTest;\n" +
+    "const { getChatGPTUser, database, validateCard, categories, makeTransactions, validateTransaction, personalAccessUnavailable, editableTransactionFields, planLegacyLink, planTransactionEdit, transactionTargets, validateBulkLinkIds, validateEditFields, validateScope } = globalThis.__cardsTest;\n" +
     readFileSync(new URL(path, import.meta.url), "utf8").replaceAll(
       "!PERSONAL_ACCOUNTS_ENABLED",
       "!globalThis.__cardsTest.enabled",
@@ -341,9 +344,66 @@ try {
   const c = expect(await request(cards, "POST", input), 201).card;
   expect(await request(cards, "DELETE", { id: c.id }), 200);
   expect(await request(cards, "DELETE", { id: c.id }), 404);
+  assert.equal(a.archived, false);
+  expect(await request(cards, "PATCH", { id: a.id, archived: "yes" }), 400);
+  expect(await request(cards, "PATCH", { id: a.id, archived: true }, "bob"), 404);
+  const archiveSnapshot = expect(await request(finance, "GET"), 200).transactions;
+  const archived = expect(await request(cards, "PATCH", { id: a.id, archived: true }), 200).card;
+  assert.equal(archived.archived, true);
+  expect(await request(finance, "POST", draft), 409);
+  assert.deepEqual(expect(await request(finance, "GET"), 200).transactions, archiveSnapshot);
+  assert.equal(expect(await request(cards, "GET"), 200).cards.find((card) => card.id === a.id).archived, true);
+  const groupValue = { ...purchasesA[0], description: "Compra corrigida", scope: "all", fields: ["description"] };
+  const groupEdited = expect(await request(finance, "PATCH", groupValue), 200).transactions;
+  assert.equal(groupEdited.length, 3);
+  assert.deepEqual(groupEdited.map((row) => row.amount), [334, 334, 333]);
+  assert.deepEqual(groupEdited.map((row) => row.status), ["paid", "pending", "pending"]);
+  assert.deepEqual(groupEdited.map((row) => row.date), ["2024-03-05", "2024-04-05", "2024-05-05"]);
+  expect(await request(finance, "PATCH", groupValue, "bob"), 404);
+  expect(await request(finance, "PATCH", { ...groupValue, scope: "invalid" }), 400);
+  expect(await request(finance, "PATCH", { ...groupValue, fields: ["userId"] }), 400);
+  expect(await request(finance, "PATCH", { ...groupValue, date: "2100-12-31", fields: ["date"] }), 400);
+  const beforeFailure = expect(await request(finance, "GET"), 200).transactions;
+  sqlite.exec(`CREATE TRIGGER reject_test_change BEFORE UPDATE ON transactions WHEN OLD.id = '${purchasesA[2].id}' AND NEW.description = 'rollback-test' BEGIN SELECT RAISE(ABORT, 'test rollback'); END`);
+  const originalError = console.error;
+  console.error = () => {};
+  try { expect(await request(finance, "PATCH", { ...groupValue, description: "rollback-test" }), 503); } finally { console.error = originalError; sqlite.exec("DROP TRIGGER reject_test_change"); }
+  assert.deepEqual(expect(await request(finance, "GET"), 200).transactions, beforeFailure);
+  expect(await request(cards, "PATCH", { id: a.id, archived: false }), 200);
+  const following = expect(await request(finance, "PATCH", { ...purchasesA[1], amount: 700, scope: "following", fields: ["amount"] }), 200).transactions;
+  assert.deepEqual(following.map((row) => row.amount), [700, 700]);
+  assert.equal(expect(await request(finance, "GET"), 200).transactions.find((row) => row.id === purchasesA[0].id).amount, 334);
+  const legacyInsert = sqlite.prepare("INSERT INTO transactions (id,userId,description,amount,date,type,category,payment,status,installment,installments,groupId) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+  legacyInsert.run("old-one", "alice", "Legado um", 1001, "2024-01-10", "expense", "Compras", "card", "paid", 1, 1, null);
+  legacyInsert.run("old-two", "alice", "Legado dois", 999, "2024-02-10", "expense", "Compras", "card", "pending", 1, 1, null);
+  legacyInsert.run("old-foreign", "bob", "Outro usuário", 500, "2024-02-10", "expense", "Compras", "card", "pending", 1, 1, null);
+  const batch = { action: "link-card", cardId: b.id, ids: ["old-one", "old-two"] };
+  expect(await request(finance, "PATCH", { ...batch, ids: ["old-one", "old-foreign"] }), 404);
+  assert.equal(sqlite.prepare("SELECT cardId FROM transactions WHERE id = 'old-one'").get().cardId, null);
+  expect(await request(finance, "PATCH", { ...batch, ids: ["old-one", purchasesB[0].id] }), 409);
+  assert.equal(sqlite.prepare("SELECT cardId FROM transactions WHERE id = 'old-one'").get().cardId, null);
+  expect(await request(finance, "PATCH", { ...batch, ids: ["old-one", "old-one"] }), 400);
+  expect(await request(finance, "PATCH", { ...batch, ids: Array.from({ length: 26 }, (_, i) => "item-" + i) }), 400);
+  expect(await request(cards, "PATCH", { id: b.id, archived: true }), 200);
+  expect(await request(finance, "PATCH", batch), 409);
+  expect(await request(finance, "PATCH", { ...groupValue, cardId: b.id, fields: ["cardId"] }), 400);
+  expect(await request(cards, "PATCH", { id: b.id, archived: false }), 200);
+  const batchLinked = expect(await request(finance, "PATCH", batch), 200).transactions.sort((left, right) => left.id.localeCompare(right.id));
+  assert.deepEqual(batchLinked.map((row) => row.amount), [1001, 999]);
+  assert.deepEqual(batchLinked.map((row) => row.date), ["2024-01-10", "2024-02-10"]);
+  assert.deepEqual(batchLinked.map((row) => row.status), ["paid", "pending"]);
+  assert.ok(batchLinked.every((row) => row.cardId === b.id));
+  expect(await request(finance, "DELETE", { id: purchasesB[1].id, scope: "all" }, "bob"), 404);
+  const removedFollowing = expect(await request(finance, "DELETE", { id: purchasesB[1].id, scope: "following" }), 200);
+  assert.equal(removedFollowing.count, 2);
+  assert.deepEqual(new Set(removedFollowing.deletedIds), new Set([purchasesB[1].id, purchasesB[2].id]));
+  assert.ok(expect(await request(finance, "GET"), 200).transactions.some((row) => row.id === purchasesB[0].id));
+  const removedAll = expect(await request(finance, "DELETE", { id: purchasesA[1].id, scope: "all" }), 200);
+  assert.equal(removedAll.count, 3);
+  assert.ok(!expect(await request(finance, "GET"), 200).transactions.some((row) => row.groupId === purchasesA[0].groupId));
   assert.deepEqual(sqlite.prepare("PRAGMA foreign_key_check").all(), []);
   console.log(
-    "OK: migração preserva histórico e preferências; CRUD de cartões, compras parceladas por cartão, autenticação, bloqueio da demo, isolamento por usuário, vínculo do legado, integridade referencial e vencimentos preservados.",
+    "OK: migração preserva histórico e preferências; CRUD de cartões, compras parceladas por cartão, autenticação, bloqueio da demo, isolamento por usuário, vínculo do legado, integridade referencial e vencimentos preservados; arquivamento/restauração, grupos, rollback atômico e vínculo em lote conferidos.",
   );
 } finally {
   sqlite.close();
