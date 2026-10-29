@@ -6,8 +6,9 @@ export type CreditCard = {
   creditLimit: number;
   closingDay: number;
   dueDay: number;
+  archived: boolean;
 };
-export type CardInput = Omit<CreditCard, "id">;
+export type CardInput = Omit<CreditCard, "id" | "archived">;
 
 export function validateCard(value: unknown): CardInput {
   const v = value as Partial<CreditCard> | null;
@@ -115,6 +116,7 @@ export const demoCards: CreditCard[] = [
     creditLimit: 500000,
     closingDay: 25,
     dueDay: 5,
+    archived: false,
   },
   {
     id: "demo-card-compras",
@@ -122,5 +124,14 @@ export const demoCards: CreditCard[] = [
     creditLimit: 300000,
     closingDay: 10,
     dueDay: 20,
+    archived: false,
+  },
+  {
+    id: "demo-card-antigo",
+    name: "Cartão antigo",
+    creditLimit: 200000,
+    closingDay: 20,
+    dueDay: 28,
+    archived: true,
   },
 ];

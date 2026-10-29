@@ -3,7 +3,7 @@ name: Verificações do Zelo
 on:
   pull_request:
   push:
-    branches: [feature/multi-cartoes]
+    branches: [feature/multi-cartoes, feature/3-newfeatures]
 
 permissions:
   contents: read
@@ -34,6 +34,35 @@ jobs:
           npm run test:profile-api
           npm run test:cards
           npm run test:cards-api
+          npm run test:batch
           npm run test:access
       - run: npm ci --prefix demo
       - run: npm run build --prefix demo
+
+  browser:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+      - run: npm ci --prefix demo
+      - run: node tests/prepare-feature-preview.mjs
+      - run: npm run build --prefix .sites-runtime/feature-preview/demo
+      - name: Exercitar três funções no Chrome sem publicação
+        run: |
+          npm run preview --prefix .sites-runtime/feature-preview/demo -- --host 127.0.0.1 --port 4173 >/tmp/zelo-three-preview.log 2>&1 &
+          ZELO_SERVER_PID=$!
+          google-chrome --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-port=9222 --user-data-dir=/tmp/zelo-three-browser >/tmp/zelo-three-chrome.log 2>&1 &
+          ZELO_BROWSER_PID=$!
+          trap 'kill "$ZELO_SERVER_PID" "$ZELO_BROWSER_PID" 2>/dev/null || true' EXIT
+          node tests/check-three-features-browser.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tres-funcoes-cartoes
+          path: /tmp/zelo-three-features/*.png
+          retention-days: 7

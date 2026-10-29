@@ -29,6 +29,13 @@
       "when": 1793228400000,
       "tag": "0003_multi_cartoes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793233200000,
+      "tag": "0004_card_archiving",
+      "breakpoints": true
     }
   ]
 }
