@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 const url = "http://127.0.0.1:5174/api/finance";
 const user = "qa-finance-" + crypto.randomUUID();
 const ids = [];
-async function request(method, body, identity = user) {
-  const response = await fetch(url, {
+let cardId;
+async function request(method, body, identity = user, endpoint = url) {
+  const response = await fetch(endpoint, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -23,15 +24,24 @@ try {
     amount: -100,
   });
   assert.equal(invalid.status, 400);
+  const card = await request(
+    "POST",
+    { name: "QA cartão", creditLimit: 100000, closingDay: 25, dueDay: 31 },
+    user,
+    "http://127.0.0.1:5174/api/cards",
+  );
+  assert.equal(card.status, 201);
+  cardId = card.data.card.id;
   const created = await request("POST", {
     description: "QA cartão",
     amount: 1001,
-    date: "2027-01-31",
+    date: "2027-01-20",
     type: "expense",
     category: "Compras",
     payment: "card",
     status: "pending",
     installments: 3,
+    cardId,
   });
   assert.equal(created.status, 201, JSON.stringify(created));
   ids.push(...created.data.transactions.map((r) => r.id));
@@ -83,4 +93,16 @@ try {
     const deleted = await request("DELETE", { id });
     assert.equal(deleted.status, 200);
   }
+  if (cardId)
+    assert.equal(
+      (
+        await request(
+          "DELETE",
+          { id: cardId },
+          user,
+          "http://127.0.0.1:5174/api/cards",
+        )
+      ).status,
+      200,
+    );
 }
