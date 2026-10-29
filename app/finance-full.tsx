@@ -1684,7 +1684,7 @@ export default function FinanceApp({
         }}
       >
         <DialogContent
-          className="finance-dialog finance-drawer"
+          className="finance-dialog finance-drawer top-0 right-0 left-auto translate-x-0 translate-y-0"
           onCloseAutoFocus={restoreDialogFocus}
         >
           <span className="drawer-kicker">SEU CONTROLE, EM DIA</span>

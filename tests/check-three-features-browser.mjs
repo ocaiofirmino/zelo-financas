@@ -203,6 +203,7 @@ try {
 
   await click('button[aria-label="Editar Tênis"]');
   await select('[data-operation-scope="edit"] select', "all");
+  assert.ok(await evaluate("(() => { const rect = document.querySelector('.finance-drawer').getBoundingClientRect(); return rect.top >= -1 && rect.bottom <= innerHeight + 1 && rect.left >= -1 && rect.right <= innerWidth + 1; })()"), "O formulário lateral deve ficar inteiro dentro da tela.");
   await text('.finance-drawer input[maxlength="100"]', "Tênis revisado");
   assert.ok(
     await evaluate(
