@@ -4,6 +4,7 @@ import {
 } from "@/lib/app-access";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { database } from "@/db/raw";
+import type { CreditCard } from "@/lib/cards";
 import {
   categories,
   makeTransactions,
@@ -51,12 +52,13 @@ export async function GET() {
     );
   try {
     const db = database();
-    const [tx, prefs] = await db.batch([
+    const [tx, cards, prefs] = await db.batch([
       db
         .prepare(
-          "SELECT id,description,amount,date,type,category,payment,status,installment,installments,groupId FROM transactions WHERE userId = ? ORDER BY date DESC,id DESC",
+          "SELECT id,description,amount,date,type,category,payment,status,installment,installments,groupId,cardId,purchaseDate FROM transactions WHERE userId = ? ORDER BY date DESC,id DESC",
         )
         .bind(user.userId),
+      db.prepare("SELECT id,name,creditLimit,closingDay,dueDay FROM credit_cards WHERE userId = ? ORDER BY name,id").bind(user.userId),
       db
         .prepare("SELECT month,goal,budgets FROM preferences WHERE userId = ?")
         .bind(user.userId),
@@ -64,6 +66,7 @@ export async function GET() {
     return Response.json(
       {
         transactions: tx.results,
+        cards: cards.results,
         settings: Object.fromEntries(
           prefs.results.map((value) => {
             const r = value as { month: string; goal: number; budgets: string };
@@ -84,19 +87,28 @@ export async function POST(request: Request) {
     return Response.json({ error: "Entre para salvar." }, { status: 401 });
   if (!sameOrigin(request))
     return Response.json({ error: "Origem inválida." }, { status: 403 });
-  let rows;
+  let value;
   try {
-    rows = makeTransactions(validateTransaction(await payload(request)));
+    value = validateTransaction(await payload(request));
   } catch (e) {
     return invalid(e);
   }
   try {
     const db = database();
+    let card: CreditCard | undefined;
+    if (value.payment === "card") {
+      if (!value.cardId) return invalid(new Error("Escolha um cartão para esta compra."));
+      const found = await db.prepare("SELECT id,name,creditLimit,closingDay,dueDay FROM credit_cards WHERE id = ? AND userId = ?").bind(value.cardId, user.userId).first<CreditCard>();
+      if (!found) return Response.json({ error: "Cartão não encontrado." }, { status: 404 });
+      card = found;
+    }
+    let rows;
+    try { rows = makeTransactions(value, card); } catch (error) { return invalid(error); }
     await db.batch(
       rows.map((r) =>
         db
           .prepare(
-            "INSERT INTO transactions (id,userId,description,amount,date,type,category,payment,status,installment,installments,groupId) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO transactions (id,userId,description,amount,date,type,category,payment,status,installment,installments,groupId,cardId,purchaseDate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
           )
           .bind(
             r.id,
@@ -111,6 +123,8 @@ export async function POST(request: Request) {
             r.installment,
             r.installments,
             r.groupId,
+            r.cardId ?? null,
+            r.purchaseDate ?? null,
           ),
       ),
     );
@@ -159,6 +173,10 @@ export async function PATCH(request: Request) {
       return Response.json({ transaction: { ...old, status: data.status } });
     }
     const row = validateTransaction({ ...data, installments: 1 });
+    if (row.cardId) {
+      const card = await db.prepare("SELECT id FROM credit_cards WHERE id = ? AND userId = ?").bind(row.cardId, user.userId).first();
+      if (!card) return Response.json({ error: "Cartão não encontrado." }, { status: 404 });
+    }
     if (
       Number(old.installments) > 1 &&
       (row.type !== "expense" || row.payment !== "card")
@@ -168,7 +186,7 @@ export async function PATCH(request: Request) {
       );
     await db
       .prepare(
-        "UPDATE transactions SET description = ?, amount = ?, date = ?, type = ?, category = ?, payment = ?, status = ? WHERE userId = ? AND id = ?",
+        "UPDATE transactions SET description = ?, amount = ?, date = ?, type = ?, category = ?, payment = ?, status = ?, cardId = ?, purchaseDate = ? WHERE userId = ? AND id = ?",
       )
       .bind(
         row.description,
@@ -178,6 +196,8 @@ export async function PATCH(request: Request) {
         row.category,
         row.payment,
         row.status,
+        row.cardId,
+        row.payment === "card" ? old.purchaseDate : null,
         user.userId,
         data.id,
       )
@@ -188,6 +208,7 @@ export async function PATCH(request: Request) {
         ...row,
         installments: old.installments,
         installment: old.installment,
+        purchaseDate: row.payment === "card" ? old.purchaseDate : null,
       },
     });
   } catch (e) {

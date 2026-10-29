@@ -1,0 +1,38 @@
+name: Verificações do Zelo
+
+on:
+  pull_request:
+  push:
+    branches: [feature/multi-cartoes]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            demo/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit --incremental false
+      - name: Regras, APIs e bloqueio da demonstração
+        run: |
+          npm run test:finance
+          npm run test:export
+          npm run test:savings
+          npm run test:profile
+          npm run test:profile-api
+          npm run test:cards
+          npm run test:cards-api
+          npm run test:access
+      - run: npm ci --prefix demo
+      - run: npm run build --prefix demo

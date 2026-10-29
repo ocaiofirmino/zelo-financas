@@ -23,7 +23,10 @@
     "db:perfil": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_perfil.sql",
     "test:access": "node --experimental-strip-types tests/check-access.mjs",
     "format": "prettier \"**/*.{ts,tsx,js,mjs,cjs,css,json,html}\" --ignore-path .gitignore --ignore-path .prettierignore --write",
-    "format:check": "prettier \"**/*.{ts,tsx,js,mjs,cjs,css,json,html}\" --ignore-path .gitignore --ignore-path .prettierignore --check"
+    "format:check": "prettier \"**/*.{ts,tsx,js,mjs,cjs,css,json,html}\" --ignore-path .gitignore --ignore-path .prettierignore --check",
+    "db:cartoes": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_multi_cartoes.sql",
+    "test:cards": "node --experimental-strip-types tests/check-cards.mjs",
+    "test:cards-api": "node --experimental-strip-types tests/check-cards-api.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -1,11 +1,13 @@
 import { totals, type Transaction } from "./finance.ts";
 import type { Worksheet } from "exceljs";
+import type { CreditCard } from "./cards.ts";
 
 export type ExportFormat = "xlsx" | "csv" | "bi";
 export type ExportScope = "month" | "all";
 
 type ExportOptions = {
   transactions: Transaction[];
+  cards?: CreditCard[];
   month: string;
   scope: ExportScope;
   format: ExportFormat;
@@ -34,6 +36,9 @@ const statementHeaders = [
   "Valor (BRL)",
   "Valor assinado (BRL)",
   "Moeda",
+  "Cartão ID",
+  "Cartão",
+  "Data da compra",
 ];
 
 const biHeaders = [
@@ -56,6 +61,9 @@ const biHeaders = [
   "valor_centavos",
   "valor_assinado_centavos",
   "moeda",
+  "cartao_id",
+  "cartao",
+  "data_compra",
 ];
 
 /** Each stored installment is already one transaction: never multiply its amount. */
@@ -128,7 +136,11 @@ function csvLine(
     .join(delimiter);
 }
 
-function humanCells(row: Transaction): (string | number)[] {
+function cardCells(row: Transaction, cards: CreditCard[]) {
+  return [row.cardId ?? "", cards.find((card) => card.id === row.cardId)?.name ?? (row.payment === "card" ? "Sem cartão vinculado" : ""), row.purchaseDate ?? ""];
+}
+
+function humanCells(row: Transaction, cards: CreditCard[] = []): (string | number)[] {
   return [
     row.id,
     row.groupId ?? "",
@@ -144,10 +156,11 @@ function humanCells(row: Transaction): (string | number)[] {
     decimal(row.amount, ","),
     decimal(signedCents(row), ","),
     "BRL",
+    ...cardCells(row, cards),
   ];
 }
 
-function biCells(row: Transaction): (string | number)[] {
+function biCells(row: Transaction, cards: CreditCard[] = []): (string | number)[] {
   return [
     row.id,
     row.groupId ?? "",
@@ -168,17 +181,18 @@ function biCells(row: Transaction): (string | number)[] {
     row.amount,
     signedCents(row),
     "BRL",
+    ...cardCells(row, cards),
   ];
 }
 
-function makeCsv(rows: Transaction[], bi: boolean) {
+function makeCsv(rows: Transaction[], bi: boolean, cards: CreditCard[] = []) {
   const delimiter = bi ? "," : ";";
   const headers = bi ? biHeaders : statementHeaders;
   const lines = [
     csvLine(headers, delimiter),
     ...rows.map((row) =>
       csvLine(
-        bi ? biCells(row) : humanCells(row),
+        bi ? biCells(row, cards) : humanCells(row, cards),
         delimiter,
         bi ? [4, 5, 12, 13, 14, 15, 16, 17] : [9, 10, 11, 12],
       ),
@@ -305,10 +319,10 @@ async function makeWorkbook(
   const statement = workbook.addWorksheet("Lançamentos");
   statement.columns = statementHeaders.map((header, index) => ({
     header,
-    width: [38, 38, 15, 16, 42, 14, 20, 15, 16, 12, 20, 19, 24, 10][index],
+    width: [38, 38, 15, 16, 42, 14, 20, 15, 16, 12, 20, 19, 24, 10, 38, 28, 18][index],
   }));
   rows.forEach((transaction) => {
-    const values: (string | number | Date)[] = humanCells(transaction);
+    const values: (string | number | Date)[] = humanCells(transaction, options.cards);
     values[2] = new Date(`${transaction.date}T00:00:00.000Z`);
     values[11] = transaction.amount / 100;
     values[12] = signedCents(transaction) / 100;
@@ -367,7 +381,7 @@ export async function buildFinanceExport(
     };
   }
   return {
-    bytes: makeCsv(rows, options.format === "bi"),
+    bytes: makeCsv(rows, options.format === "bi", options.cards),
     mimeType: "text/csv;charset=utf-8",
     filename: `${base}.csv`,
   };
